@@ -9,9 +9,16 @@ struct ActiveWorkoutView: View {
     @Environment(\.dismiss) private var dismiss
     @Query private var configs: [UserExerciseConfig]
     @State private var viewModel = ActiveWorkoutViewModel()
-    @State private var currentIndex = 0
+    @State private var currentIndex: Int
     @State private var showFinishConfirmation = false
     @State private var showCancelConfirmation = false
+
+    init(session: WorkoutSession) {
+        self.session = session
+        let logs = session.exerciseLogs.sorted { $0.order < $1.order }
+        let firstIncomplete = logs.firstIndex { log in log.sets.contains { $0.repsCompleted == nil } }
+        _currentIndex = State(initialValue: firstIncomplete ?? max(0, logs.count - 1))
+    }
 
     private var sortedLogs: [ExerciseLog] {
         session.exerciseLogs.sorted { $0.order < $1.order }
