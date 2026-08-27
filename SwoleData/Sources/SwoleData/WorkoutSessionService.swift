@@ -56,4 +56,23 @@ public enum WorkoutSessionService {
         try context.save()
         return session
     }
+
+    public static func finishWorkout(_ session: WorkoutSession, in context: ModelContext) throws {
+        for log in session.exerciseLogs {
+            for set in log.sets where set.repsCompleted == nil {
+                set.repsCompleted = 0
+            }
+        }
+        session.finishedAt = .now
+
+        let settingsList = try context.fetch(FetchDescriptor<UserSettings>())
+        settingsList.first?.lastCompletedWorkoutType = session.workoutType
+
+        try context.save()
+    }
+
+    public static func cancelWorkout(_ session: WorkoutSession, in context: ModelContext) throws {
+        context.delete(session)
+        try context.save()
+    }
 }

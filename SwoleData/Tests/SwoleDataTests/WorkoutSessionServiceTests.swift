@@ -41,3 +41,31 @@ private func makeSeededContext() throws -> ModelContext {
         try WorkoutSessionService.startWorkout(in: context)
     }
 }
+
+@Test func finishWorkoutCoercesUnsetRepsToZeroLocksSessionAndUpdatesSettings() throws {
+    let context = try makeSeededContext()
+    let session = try WorkoutSessionService.startWorkout(in: context)
+
+    try WorkoutSessionService.finishWorkout(session, in: context)
+
+    #expect(session.finishedAt != nil)
+    #expect(session.exerciseLogs.flatMap(\.sets).allSatisfy { $0.repsCompleted == 0 })
+
+    let settings = try context.fetch(FetchDescriptor<UserSettings>()).first
+    #expect(settings?.lastCompletedWorkoutType == .a)
+    #expect(try WorkoutSessionService.activeSession(in: context) == nil)
+}
+
+@Test func cancelWorkoutDeletesSessionAndLeavesLastCompletedWorkoutTypeUntouched() throws {
+    let context = try makeSeededContext()
+    let session = try WorkoutSessionService.startWorkout(in: context)
+
+    try WorkoutSessionService.cancelWorkout(session, in: context)
+
+    #expect(try context.fetch(FetchDescriptor<WorkoutSession>()).isEmpty)
+    #expect(try context.fetch(FetchDescriptor<ExerciseLog>()).isEmpty)
+    #expect(try context.fetch(FetchDescriptor<SetLog>()).isEmpty)
+
+    let settings = try context.fetch(FetchDescriptor<UserSettings>()).first
+    #expect(settings?.lastCompletedWorkoutType == nil)
+}
