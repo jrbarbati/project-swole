@@ -21,7 +21,7 @@ public enum ProgressionCalculator {
                 break
             }
 
-            if let streakWeight, log.targetWeight < streakWeight {
+            if let streakWeight, log.targetWeight > streakWeight {
                 break
             }
             
