@@ -59,6 +59,7 @@ struct ActiveWorkoutView: View {
                             isFinalExercise: currentIndex == sortedLogs.count - 1,
                             config: config
                         )
+                        try? modelContext.save()
                     }
                 } else {
                     Text("Missing configuration for \(log.exercise?.name ?? "this exercise").")
