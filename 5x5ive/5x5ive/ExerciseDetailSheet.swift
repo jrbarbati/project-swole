@@ -52,11 +52,33 @@ struct ExerciseDetailSheet: View {
                 .font(Theme.Font.display(26))
                 .foregroundStyle(Theme.textPrimary)
             Spacer()
-            Text("\(log.targetWeight.formatted()) \(unit.rawValue.uppercased())")
-                .font(Theme.Font.numeric(15))
-                .foregroundStyle(Theme.textMuted)
+            weightStepper
         }
         .padding(.top, 20)
+    }
+
+    /// Edits `log.targetWeight` directly — this only ever affects the
+    /// exercise log of the session already in progress, since this sheet is
+    /// only ever presented from `ActiveWorkoutView`.
+    private var weightStepper: some View {
+        HStack(spacing: 10) {
+            StepButton(symbol: "−") {
+                log.targetWeight = max(0, log.targetWeight - (config?.weightIncrement ?? 5))
+                try? modelContext.save()
+            }
+            HStack(alignment: .firstTextBaseline, spacing: 3) {
+                Text(log.targetWeight.formatted(.number.precision(.fractionLength(0...1))))
+                    .font(Theme.Font.numeric(15))
+                    .foregroundStyle(Theme.textMuted)
+                Text(unit.rawValue.uppercased())
+                    .font(Theme.Font.numeric(15))
+                    .foregroundStyle(Theme.textMuted)
+            }
+            StepButton(symbol: "+") {
+                log.targetWeight += (config?.weightIncrement ?? 5)
+                try? modelContext.save()
+            }
+        }
     }
 
     private var warmupSection: some View {
@@ -120,33 +142,18 @@ struct ExerciseDetailSheet: View {
     }
 
     private var actionRow: some View {
-        HStack(spacing: 10) {
-            NavigationLink {
-                SettingsView()
-            } label: {
-                Text("Edit weight")
-                    .font(Theme.Font.body(15))
-                    .foregroundStyle(Theme.textMuted)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 52)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous)
-                            .stroke(Theme.borderStrong, lineWidth: 1)
-                    )
-            }
-            Button {
-                save()
-                dismiss()
-            } label: {
-                Text("Done")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(Theme.canvas)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 52)
-                    .background(Theme.textPrimary, in: RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous))
-            }
-            .buttonStyle(.plain)
+        Button {
+            save()
+            dismiss()
+        } label: {
+            Text("Done")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(Theme.canvas)
+                .frame(maxWidth: .infinity)
+                .frame(height: 52)
+                .background(Theme.textPrimary, in: RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous))
         }
+        .buttonStyle(.plain)
     }
 
     private var trendLabel: String? {
