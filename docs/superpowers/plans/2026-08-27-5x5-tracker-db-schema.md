@@ -14,7 +14,7 @@
 
 **Files:**
 - Create: `SwoleData/Package.swift`
-- Create: `SwoleData/Sources/SwoleData/` (generated, then emptied)
+- Create: `SwoleData/Sources/SwoleData/SwoleData.swift` (generated, then trimmed to a placeholder)
 - Create: `SwoleData/Tests/SwoleDataTests/` (generated, then emptied)
 
 - [ ] **Step 1: Generate the package**
@@ -51,24 +51,37 @@ let package = Package(
 )
 ```
 
-- [ ] **Step 3: Remove generated placeholder files**
+- [ ] **Step 3: Remove the test placeholder; trim the source placeholder**
+
+SwiftPM errors with `target 'SwoleData' ... is empty` if a target has zero source
+files, so the `Sources/SwoleData/SwoleData.swift` placeholder can't simply be
+deleted yet — it stays until Task 2 adds the first real source file. The test
+placeholder has no such constraint because Task 2 immediately adds a real test
+file in the same task, so it can go now.
 
 Run:
 ```bash
-rm /Users/josephbarbati/dev/project-swole/SwoleData/Sources/SwoleData/SwoleData.swift
 rm /Users/josephbarbati/dev/project-swole/SwoleData/Tests/SwoleDataTests/SwoleDataTests.swift
 ```
 
-- [ ] **Step 4: Verify the empty package builds**
+Replace the contents of `SwoleData/Sources/SwoleData/SwoleData.swift` with:
+
+```swift
+// Placeholder that keeps the SwoleData target non-empty (SwiftPM requires at
+// least one source file per target) until Task 2 adds WorkoutEnums.swift and
+// deletes this file.
+```
+
+- [ ] **Step 4: Verify the package builds**
 
 Run: `cd /Users/josephbarbati/dev/project-swole/SwoleData && swift build`
-Expected: `Build complete!` (targets have no source files yet, but SwiftPM allows this)
+Expected: `Build complete!`
 
 - [ ] **Step 5: Commit**
 
 ```bash
 cd /Users/josephbarbati/dev/project-swole
-git add SwoleData/Package.swift SwoleData/.gitignore
+git add SwoleData/Package.swift SwoleData/.gitignore SwoleData/Sources/SwoleData/SwoleData.swift
 git commit -m "Scaffold SwoleData Swift package for iOS 17 / macOS 14"
 ```
 
@@ -106,6 +119,14 @@ Expected: FAIL to build — `error: cannot find type 'WorkoutType' in scope`
 
 - [ ] **Step 3: Write minimal implementation**
 
+Delete the Task 1 source placeholder now that a real source file is landing
+(this is the point where the target stops being at risk of the SwiftPM
+"target is empty" error, since `WorkoutEnums.swift` takes its place):
+
+```bash
+rm /Users/josephbarbati/dev/project-swole/SwoleData/Sources/SwoleData/SwoleData.swift
+```
+
 Create `SwoleData/Sources/SwoleData/WorkoutEnums.swift`:
 
 ```swift
@@ -129,7 +150,7 @@ Expected: `Test run with 2 tests in 0 suites passed`
 
 ```bash
 cd /Users/josephbarbati/dev/project-swole
-git add SwoleData/Sources/SwoleData/WorkoutEnums.swift SwoleData/Tests/SwoleDataTests/WorkoutEnumsTests.swift
+git add SwoleData/Sources/SwoleData/WorkoutEnums.swift SwoleData/Sources/SwoleData/SwoleData.swift SwoleData/Tests/SwoleDataTests/WorkoutEnumsTests.swift
 git commit -m "Add WorkoutType and MeasurementUnit enums"
 ```
 
