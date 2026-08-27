@@ -27,7 +27,9 @@ public enum StandardSeed {
                 setCount: exercise.defaultSetCount,
                 repsPerSet: exercise.defaultRepsPerSet,
                 deloadThreshold: 3,
-                deloadPercentage: 0.10
+                deloadPercentage: 0.10,
+                restSecondsOnSuccess: 90,
+                restSecondsOnFail: 180
             ))
         }
         
