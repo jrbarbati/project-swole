@@ -29,7 +29,7 @@ private func makeFixture(target: Int = 5, restOnSuccess: Int = 90, restOnFail: I
     let model = ActiveWorkoutViewModel(settleDelay: .milliseconds(20))
     let set = log.sets.sorted { $0.setNumber < $1.setNumber }[0]
 
-    model.tap(set: set, in: log, isLastSet: false, isFinalExercise: false, config: config)
+    model.tap(set: set, in: log, isFinalExercise: false, config: config)
     #expect(set.repsCompleted == 5)
     #expect(model.activeRest == nil)
 
@@ -43,9 +43,9 @@ private func makeFixture(target: Int = 5, restOnSuccess: Int = 90, restOnFail: I
     let model = ActiveWorkoutViewModel(settleDelay: .milliseconds(40))
     let set = log.sets.sorted { $0.setNumber < $1.setNumber }[0]
 
-    model.tap(set: set, in: log, isLastSet: false, isFinalExercise: false, config: config) // -> 5
-    model.tap(set: set, in: log, isLastSet: false, isFinalExercise: false, config: config) // -> 4
-    model.tap(set: set, in: log, isLastSet: false, isFinalExercise: false, config: config) // -> 3
+    model.tap(set: set, in: log, isFinalExercise: false, config: config) // -> 5
+    model.tap(set: set, in: log, isFinalExercise: false, config: config) // -> 4
+    model.tap(set: set, in: log, isFinalExercise: false, config: config) // -> 3
 
     #expect(set.repsCompleted == 3)
     #expect(model.activeRest == nil)
@@ -61,41 +61,63 @@ private func makeFixture(target: Int = 5, restOnSuccess: Int = 90, restOnFail: I
     let model = ActiveWorkoutViewModel(settleDelay: .milliseconds(20))
     let set = log.sets.sorted { $0.setNumber < $1.setNumber }[0]
 
-    model.tap(set: set, in: log, isLastSet: false, isFinalExercise: false, config: config) // -> 1
-    model.tap(set: set, in: log, isLastSet: false, isFinalExercise: false, config: config) // -> 0
-    model.tap(set: set, in: log, isLastSet: false, isFinalExercise: false, config: config) // -> nil
+    model.tap(set: set, in: log, isFinalExercise: false, config: config) // -> 1
+    model.tap(set: set, in: log, isFinalExercise: false, config: config) // -> 0
+    model.tap(set: set, in: log, isFinalExercise: false, config: config) // -> nil
 
     #expect(set.repsCompleted == nil)
 
     try await Task.sleep(for: .milliseconds(100))
 
     #expect(model.activeRest == nil)
-    #expect(model.transitionPrompt == nil)
+    #expect(model.completion == nil)
 }
 
-@Test @MainActor func tappingTheLastSetShowsTransitionPromptInsteadOfARestTimer() async throws {
+@Test @MainActor func settlingTheLastSetOfAnExerciseShowsCompletionInsteadOfARestTimer() async throws {
     let (log, config) = try makeFixture()
     let model = ActiveWorkoutViewModel(settleDelay: .milliseconds(20))
-    let set = log.sets.sorted { $0.setNumber < $1.setNumber }.last!
+    let sets = log.sets.sorted { $0.setNumber < $1.setNumber }
+    for set in sets.dropLast() {
+        set.repsCompleted = 5
+    }
 
-    model.tap(set: set, in: log, isLastSet: true, isFinalExercise: false, config: config)
+    model.tap(set: sets.last!, in: log, isFinalExercise: false, config: config)
 
     try await Task.sleep(for: .milliseconds(100))
 
+    #expect(model.completion?.exerciseName == "Squat")
+    #expect(model.completion?.isFinalExercise == false)
+    #expect(model.activeRest != nil)
+}
+
+@Test @MainActor func settlingTheLastSetOfTheFinalExerciseStartsNoRest() async throws {
+    let (log, config) = try makeFixture()
+    let model = ActiveWorkoutViewModel(settleDelay: .milliseconds(20))
+    let sets = log.sets.sorted { $0.setNumber < $1.setNumber }
+    for set in sets.dropLast() {
+        set.repsCompleted = 5
+    }
+
+    model.tap(set: sets.last!, in: log, isFinalExercise: true, config: config)
+
+    try await Task.sleep(for: .milliseconds(100))
+
+    #expect(model.completion?.isFinalExercise == true)
     #expect(model.activeRest == nil)
-    #expect(model.transitionPrompt?.exerciseName == "Squat")
-    #expect(model.transitionPrompt?.isFinalExercise == false)
 }
 
-@Test @MainActor func dismissTransitionPromptClearsIt() async throws {
+@Test @MainActor func dismissCompletionClearsIt() async throws {
     let (log, config) = try makeFixture()
     let model = ActiveWorkoutViewModel(settleDelay: .milliseconds(20))
-    let set = log.sets.sorted { $0.setNumber < $1.setNumber }.last!
+    let sets = log.sets.sorted { $0.setNumber < $1.setNumber }
+    for set in sets.dropLast() {
+        set.repsCompleted = 5
+    }
 
-    model.tap(set: set, in: log, isLastSet: true, isFinalExercise: true, config: config)
+    model.tap(set: sets.last!, in: log, isFinalExercise: true, config: config)
     try await Task.sleep(for: .milliseconds(100))
-    #expect(model.transitionPrompt != nil)
+    #expect(model.completion != nil)
 
-    model.dismissTransitionPrompt()
-    #expect(model.transitionPrompt == nil)
+    model.dismissCompletion()
+    #expect(model.completion == nil)
 }

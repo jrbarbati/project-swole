@@ -1,10 +1,3 @@
-//
-//  _x5iveApp.swift
-//  5x5ive
-//
-//  Created by Joseph Barbati on 8/27/26.
-//
-
 import SwiftUI
 import SwiftData
 import SwoleData
@@ -27,7 +20,7 @@ struct _x5iveApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            RootView()
         }
         .modelContainer(sharedModelContainer)
     }
