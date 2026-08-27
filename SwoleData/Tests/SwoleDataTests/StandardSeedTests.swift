@@ -43,3 +43,12 @@ import SwiftData
     #expect(didSeedAgain == false)
     #expect(try context.fetch(FetchDescriptor<Exercise>()).count == 5)
 }
+
+@Test func seedSetsDefaultRestDurationsOnEveryConfig() throws {
+    let context = try makeInMemoryContext()
+    _ = try StandardSeed.seed(in: context)
+
+    let configs = try context.fetch(FetchDescriptor<UserExerciseConfig>())
+    #expect(configs.allSatisfy { $0.restSecondsOnSuccess == 90 })
+    #expect(configs.allSatisfy { $0.restSecondsOnFail == 180 })
+}

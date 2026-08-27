@@ -10,6 +10,8 @@ public final class UserExerciseConfig {
     public var repsPerSet: Int
     public var deloadThreshold: Int
     public var deloadPercentage: Double
+    public var restSecondsOnSuccess: Int = 90
+    public var restSecondsOnFail: Int = 180
 
     public init(
         exercise: Exercise?,
@@ -18,7 +20,9 @@ public final class UserExerciseConfig {
         setCount: Int,
         repsPerSet: Int,
         deloadThreshold: Int,
-        deloadPercentage: Double
+        deloadPercentage: Double,
+        restSecondsOnSuccess: Int = 90,
+        restSecondsOnFail: Int = 180
     ) {
         self.exercise = exercise
         self.startingWeight = startingWeight
@@ -27,5 +31,7 @@ public final class UserExerciseConfig {
         self.repsPerSet = repsPerSet
         self.deloadThreshold = deloadThreshold
         self.deloadPercentage = deloadPercentage
+        self.restSecondsOnSuccess = restSecondsOnSuccess
+        self.restSecondsOnFail = restSecondsOnFail
     }
 }
