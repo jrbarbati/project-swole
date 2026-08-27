@@ -10,12 +10,21 @@ public enum ProgressionCalculator {
             .sorted { ($0.session?.date ?? .distantPast) > ($1.session?.date ?? .distantPast) }
     }
 
+    /// Counts consecutive fails back from the most recent log, stopping not
+    /// just at the first success but also at any weight discontinuity: a
+    /// fail-streak only repeats a session at the same weight (see
+    /// `nextTargetWeight` below), so a change in `targetWeight` between two
+    /// consecutive fails means a deload happened there, and the streak must
+    /// not count fails from before that deload.
     public static func currentFailStreak(for exercise: Exercise, in context: ModelContext) throws -> Int {
         let logs = try sortedLogs(for: exercise, in: context)
         var streak = 0
+        var streakWeight: Double?
         for log in logs {
             if log.succeeded { break }
+            if let streakWeight, log.targetWeight != streakWeight { break }
             streak += 1
+            streakWeight = log.targetWeight
         }
         return streak
     }
