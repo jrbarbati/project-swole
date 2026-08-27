@@ -11,7 +11,7 @@ import Foundation
     let context = ModelContext(container)
 
     let squat = Exercise(name: "Squat", defaultSetCount: 5, defaultRepsPerSet: 5)
-    let session = WorkoutSession(date: Date(), workoutType: .a)
+    let session = WorkoutSession(startedAt: Date(), workoutType: .a)
     context.insert(squat)
     context.insert(session)
 
@@ -37,7 +37,7 @@ import Foundation
     let context = ModelContext(container)
 
     let squat = Exercise(name: "Squat", defaultSetCount: 5, defaultRepsPerSet: 5)
-    let session = WorkoutSession(date: Date(), workoutType: .a)
+    let session = WorkoutSession(startedAt: Date(), workoutType: .a)
     context.insert(squat)
     context.insert(session)
     let log = ExerciseLog(session: session, exercise: squat, targetWeight: 135, targetReps: 5)

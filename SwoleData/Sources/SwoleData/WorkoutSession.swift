@@ -3,13 +3,16 @@ import SwiftData
 
 @Model
 public final class WorkoutSession {
-    public var date: Date
+    @Attribute(originalName: "date")
+    public var startedAt: Date
     public var workoutType: WorkoutType
+    public var finishedAt: Date?
     @Relationship(deleteRule: .cascade, inverse: \ExerciseLog.session)
     public var exerciseLogs: [ExerciseLog] = []
 
-    public init(date: Date, workoutType: WorkoutType) {
-        self.date = date
+    public init(startedAt: Date, workoutType: WorkoutType, finishedAt: Date? = nil) {
+        self.startedAt = startedAt
         self.workoutType = workoutType
+        self.finishedAt = finishedAt
     }
 }

@@ -23,17 +23,17 @@ import Foundation
 
 @Test func nextTargetWeightIncrementsAfterASuccessfulSession() throws {
     let context = try makeInMemoryContext()
-    
+
     let squat = Exercise(name: "Squat", defaultSetCount: 5, defaultRepsPerSet: 5)
     context.insert(squat)
-    
+
     let config = UserExerciseConfig(
         exercise: squat, startingWeight: 45, weightIncrement: 5,
         setCount: 5, repsPerSet: 5, deloadThreshold: 3, deloadPercentage: 0.10
     )
     context.insert(config)
-    
-    let session = WorkoutSession(date: Date(), workoutType: .a)
+
+    let session = WorkoutSession(startedAt: Date(), workoutType: .a)
     context.insert(session)
     
     let log = ExerciseLog(session: session, exercise: squat, targetWeight: 135, targetReps: 5)
@@ -59,10 +59,10 @@ import Foundation
         setCount: 5, repsPerSet: 5, deloadThreshold: 3, deloadPercentage: 0.10
     )
     context.insert(config)
-    
-    let session = WorkoutSession(date: Date(), workoutType: .a)
+
+    let session = WorkoutSession(startedAt: Date(), workoutType: .a)
     context.insert(session)
-    
+
     let log = ExerciseLog(session: session, exercise: squat, targetWeight: 200, targetReps: 5)
     context.insert(log)
     
@@ -91,8 +91,8 @@ import Foundation
     
     for dayOffset in 0..<3 {
         let date = calendar.date(byAdding: .day, value: dayOffset, to: Date())!
-        
-        let session = WorkoutSession(date: date, workoutType: .a)
+
+        let session = WorkoutSession(startedAt: date, workoutType: .a)
         context.insert(session)
         
         let log = ExerciseLog(session: session, exercise: squat, targetWeight: 200, targetReps: 5)
@@ -122,8 +122,8 @@ import Foundation
     
     for (dayOffset, weight) in weights.enumerated() {
         let date = calendar.date(byAdding: .day, value: dayOffset, to: Date())!
-        
-        let session = WorkoutSession(date: date, workoutType: .a)
+
+        let session = WorkoutSession(startedAt: date, workoutType: .a)
         context.insert(session)
         
         let log = ExerciseLog(session: session, exercise: squat, targetWeight: weight, targetReps: 5)
