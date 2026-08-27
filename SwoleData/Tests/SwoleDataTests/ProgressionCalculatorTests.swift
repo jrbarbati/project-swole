@@ -148,3 +148,34 @@ import Foundation
     let next = try ProgressionCalculator.nextTargetWeight(for: squat, config: config, in: context)
     #expect(next == 180)
 }
+
+@Test func nextTargetWeightUsesOverrideRegardlessOfHistory() throws {
+    let context = try makeInMemoryContext()
+
+    let squat = Exercise(name: "Squat", defaultSetCount: 5, defaultRepsPerSet: 5)
+    context.insert(squat)
+
+    let config = UserExerciseConfig(
+        exercise: squat, startingWeight: 45, weightIncrement: 5,
+        setCount: 5, repsPerSet: 5, deloadThreshold: 3, deloadPercentage: 0.10
+    )
+    context.insert(config)
+
+    let session = WorkoutSession(startedAt: Date(), workoutType: .a)
+    context.insert(session)
+
+    let log = ExerciseLog(session: session, exercise: squat, targetWeight: 135, targetReps: 5)
+    context.insert(log)
+
+    for n in 1...5 {
+        context.insert(SetLog(exerciseLog: log, setNumber: n, repsCompleted: 5))
+    }
+    try context.save()
+
+    // Without an override, history says 140 (135 + increment, last session succeeded).
+    config.weightOverride = 225
+    try context.save()
+
+    let next = try ProgressionCalculator.nextTargetWeight(for: squat, config: config, in: context)
+    #expect(next == 225)
+}
