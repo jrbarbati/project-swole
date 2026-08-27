@@ -7,13 +7,12 @@
 
 import SwiftUI
 import SwiftData
+import SwoleData
 
 @main
 struct _x5iveApp: App {
     var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            Item.self,
-        ])
+        let schema = swoleSchema
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
         do {
