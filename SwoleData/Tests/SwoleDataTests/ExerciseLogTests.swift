@@ -29,6 +29,29 @@ import Foundation
     #expect(log.succeeded == true)
 }
 
+@Test func succeededIsFalseWhenAnySetIsNotStarted() throws {
+    let container = try ModelContainer(
+        for: Exercise.self, WorkoutSession.self, ExerciseLog.self, SetLog.self,
+        configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+    )
+    let context = ModelContext(container)
+
+    let squat = Exercise(name: "Squat", defaultSetCount: 5, defaultRepsPerSet: 5)
+    let session = WorkoutSession(startedAt: Date(), workoutType: .a)
+    context.insert(squat)
+    context.insert(session)
+
+    let log = ExerciseLog(session: session, exercise: squat, targetWeight: 135, targetReps: 5)
+    context.insert(log)
+    for n in 1...4 {
+        context.insert(SetLog(exerciseLog: log, setNumber: n, repsCompleted: 5))
+    }
+    context.insert(SetLog(exerciseLog: log, setNumber: 5, repsCompleted: nil))
+    try context.save()
+
+    #expect(log.succeeded == false)
+}
+
 @Test func deletingSessionCascadesToLogsAndSets() throws {
     let container = try ModelContainer(
         for: Exercise.self, WorkoutSession.self, ExerciseLog.self, SetLog.self,
