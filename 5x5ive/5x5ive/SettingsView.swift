@@ -118,6 +118,19 @@ private struct WeightRow: View {
     let unit: MeasurementUnit
     let onChange: () -> Void
 
+    @Environment(\.modelContext) private var modelContext
+
+    /// The weight that will be used the next time this exercise's workout
+    /// starts: the manual override if one is set, otherwise the same
+    /// progression calculation the workout itself uses. Always live — no
+    /// separate sync step needed after finishing a workout.
+    private var currentWeight: Double {
+        if let override = config.weightOverride { return override }
+        guard let exercise = config.exercise else { return config.startingWeight }
+        return (try? ProgressionCalculator.nextTargetWeight(for: exercise, config: config, in: modelContext))
+            ?? config.startingWeight
+    }
+
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
@@ -131,15 +144,15 @@ private struct WeightRow: View {
             Spacer()
             HStack(spacing: 10) {
                 StepButton(symbol: "−") {
-                    config.startingWeight = max(0, config.startingWeight - config.weightIncrement)
+                    config.weightOverride = max(0, currentWeight - config.weightIncrement)
                     onChange()
                 }
-                Text(config.startingWeight.formatted(.number.precision(.fractionLength(0...1))))
+                Text(currentWeight.formatted(.number.precision(.fractionLength(0...1))))
                     .font(Theme.Font.numeric(19))
                     .foregroundStyle(Theme.textPrimary)
                     .frame(width: 44)
                 StepButton(symbol: "+") {
-                    config.startingWeight += config.weightIncrement
+                    config.weightOverride = currentWeight + config.weightIncrement
                     onChange()
                 }
             }
@@ -149,7 +162,7 @@ private struct WeightRow: View {
     }
 }
 
-private struct StepButton: View {
+struct StepButton: View {
     let symbol: String
     let action: () -> Void
 
