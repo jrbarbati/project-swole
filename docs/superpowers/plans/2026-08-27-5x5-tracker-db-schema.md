@@ -953,6 +953,43 @@ import Foundation
     let next = try ProgressionCalculator.nextTargetWeight(for: squat, config: config, in: context)
     #expect(next == 180)
 }
+
+@Test func failStreakResetsAfterADeload() throws {
+    let context = try makeInMemoryContext()
+    let squat = Exercise(name: "Squat", defaultSetCount: 5, defaultRepsPerSet: 5)
+    context.insert(squat)
+
+    let calendar = Calendar.current
+    // 3 fails at 200 -> triggers a deload to 180. A 4th fail is then logged
+    // AT the deloaded weight (180), simulating a real next session that used
+    // ProgressionCalculator's own deloaded output as its target.
+    let weights = [200.0, 200.0, 200.0, 180.0]
+    for (dayOffset, weight) in weights.enumerated() {
+        let date = calendar.date(byAdding: .day, value: dayOffset, to: Date())!
+        let session = WorkoutSession(date: date, workoutType: .a)
+        context.insert(session)
+        let log = ExerciseLog(session: session, exercise: squat, targetWeight: weight, targetReps: 5)
+        context.insert(log)
+        for n in 1...5 { context.insert(SetLog(exerciseLog: log, setNumber: n, repsCompleted: n == 5 ? 3 : 5)) }
+    }
+    try context.save()
+
+    // Streak should count only the single fail at the new (180) weight, not
+    // all 4 fails across the deload boundary.
+    let streak = try ProgressionCalculator.currentFailStreak(for: squat, in: context)
+    #expect(streak == 1)
+
+    let config = UserExerciseConfig(
+        exercise: squat, startingWeight: 45, weightIncrement: 5,
+        setCount: 5, repsPerSet: 5, deloadThreshold: 3, deloadPercentage: 0.10
+    )
+    context.insert(config)
+    try context.save()
+
+    // Below threshold again post-deload -> repeat at 180, not deload a second time to 162.
+    let next = try ProgressionCalculator.nextTargetWeight(for: squat, config: config, in: context)
+    #expect(next == 180)
+}
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
@@ -977,12 +1014,21 @@ public enum ProgressionCalculator {
             .sorted { ($0.session?.date ?? .distantPast) > ($1.session?.date ?? .distantPast) }
     }
 
+    /// Counts consecutive fails back from the most recent log, stopping not
+    /// just at the first success but also at any weight discontinuity: a
+    /// fail-streak only repeats a session at the same weight (see
+    /// `nextTargetWeight` below), so a change in `targetWeight` between two
+    /// consecutive fails means a deload happened there, and the streak must
+    /// not count fails from before that deload.
     public static func currentFailStreak(for exercise: Exercise, in context: ModelContext) throws -> Int {
         let logs = try sortedLogs(for: exercise, in: context)
         var streak = 0
+        var streakWeight: Double?
         for log in logs {
             if log.succeeded { break }
+            if let streakWeight, log.targetWeight != streakWeight { break }
             streak += 1
+            streakWeight = log.targetWeight
         }
         return streak
     }
@@ -1013,7 +1059,7 @@ Note: logs are fetched in full and filtered/sorted in memory rather than via a `
 - [ ] **Step 4: Run tests to verify they pass**
 
 Run: `cd /Users/josephbarbati/dev/project-swole/SwoleData && swift test`
-Expected: all tests pass (15 total so far)
+Expected: all tests pass (16 total so far)
 
 - [ ] **Step 5: Commit**
 
@@ -1079,7 +1125,7 @@ public enum WorkoutScheduler {
 - [ ] **Step 4: Run tests to verify they pass**
 
 Run: `cd /Users/josephbarbati/dev/project-swole/SwoleData && swift test`
-Expected: all tests pass (18 total)
+Expected: all tests pass (19 total)
 
 - [ ] **Step 5: Commit**
 
@@ -1103,7 +1149,7 @@ cd /Users/josephbarbati/dev/project-swole/SwoleData
 rm -rf .build
 swift test
 ```
-Expected: `Test run with 18 tests in 0 suites passed` and `swift build`/test both exit 0.
+Expected: `Test run with 19 tests in 0 suites passed` and `swift build`/test both exit 0.
 
 - [ ] **Step 2: Confirm the package's public API surface**
 
