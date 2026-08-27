@@ -57,6 +57,7 @@ public enum WorkoutSessionService {
         context: ModelContext
     ) throws {
         let targetWeight = try ProgressionCalculator.nextTargetWeight(for: exercise, config: config, in: context)
+        config.weightOverride = nil
         let log = ExerciseLog(
             session: session,
             exercise: exercise,
