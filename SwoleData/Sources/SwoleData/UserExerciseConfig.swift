@@ -12,6 +12,10 @@ public final class UserExerciseConfig {
     public var deloadPercentage: Double
     public var restSecondsOnSuccess: Int = 90
     public var restSecondsOnFail: Int = 180
+    /// One-shot manual weight nudge for the next session started for this
+    /// exercise. Consumed (set back to `nil`) by `WorkoutSessionService`
+    /// once a session picks it up.
+    public var weightOverride: Double?
 
     public init(
         exercise: Exercise?,
@@ -33,5 +37,6 @@ public final class UserExerciseConfig {
         self.deloadPercentage = deloadPercentage
         self.restSecondsOnSuccess = restSecondsOnSuccess
         self.restSecondsOnFail = restSecondsOnFail
+        self.weightOverride = nil
     }
 }

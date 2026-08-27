@@ -29,4 +29,5 @@ import SwiftData
     #expect(fetched.first?.weightIncrement == 5)
     #expect(fetched.first?.deloadThreshold == 3)
     #expect(fetched.first?.deloadPercentage == 0.10)
+    #expect(fetched.first?.weightOverride == nil)
 }

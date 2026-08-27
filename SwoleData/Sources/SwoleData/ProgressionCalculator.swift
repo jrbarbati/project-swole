@@ -33,6 +33,10 @@ public enum ProgressionCalculator {
     }
 
     public static func nextTargetWeight(for exercise: Exercise, config: UserExerciseConfig, in context: ModelContext) throws -> Double {
+        if let override = config.weightOverride {
+            return override
+        }
+
         let logs = try sortedLogs(for: exercise, in: context)
         guard let lastLog = logs.first else {
             return config.startingWeight
