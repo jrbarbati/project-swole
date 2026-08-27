@@ -24,7 +24,7 @@ private func makeFixture(target: Int = 5, restOnSuccess: Int = 90, restOnFail: I
     return (log, config)
 }
 
-@Test func tapSchedulesSuccessRestAfterSettlingOnTargetValue() async throws {
+@Test @MainActor func tapSchedulesSuccessRestAfterSettlingOnTargetValue() async throws {
     let (log, config) = try makeFixture()
     let model = ActiveWorkoutViewModel(settleDelay: .milliseconds(20))
     let set = log.sets.sorted { $0.setNumber < $1.setNumber }[0]
@@ -38,7 +38,7 @@ private func makeFixture(target: Int = 5, restOnSuccess: Int = 90, restOnFail: I
     #expect(model.activeRest?.outcome == .success)
 }
 
-@Test func rapidCorrectionTapsOnlyFireOnceUsingTheFinalSettledValue() async throws {
+@Test @MainActor func rapidCorrectionTapsOnlyFireOnceUsingTheFinalSettledValue() async throws {
     let (log, config) = try makeFixture()
     let model = ActiveWorkoutViewModel(settleDelay: .milliseconds(40))
     let set = log.sets.sorted { $0.setNumber < $1.setNumber }[0]
@@ -53,9 +53,10 @@ private func makeFixture(target: Int = 5, restOnSuccess: Int = 90, restOnFail: I
     try await Task.sleep(for: .milliseconds(120))
 
     #expect(model.activeRest?.outcome == .fail)
+    #expect(model.settleFireCount == 1)
 }
 
-@Test func cyclingBackToNotStartedBeforeSettlingFiresNoTimer() async throws {
+@Test @MainActor func cyclingBackToNotStartedBeforeSettlingFiresNoTimer() async throws {
     let (log, config) = try makeFixture(target: 1)
     let model = ActiveWorkoutViewModel(settleDelay: .milliseconds(20))
     let set = log.sets.sorted { $0.setNumber < $1.setNumber }[0]
@@ -72,7 +73,7 @@ private func makeFixture(target: Int = 5, restOnSuccess: Int = 90, restOnFail: I
     #expect(model.transitionPrompt == nil)
 }
 
-@Test func tappingTheLastSetShowsTransitionPromptInsteadOfARestTimer() async throws {
+@Test @MainActor func tappingTheLastSetShowsTransitionPromptInsteadOfARestTimer() async throws {
     let (log, config) = try makeFixture()
     let model = ActiveWorkoutViewModel(settleDelay: .milliseconds(20))
     let set = log.sets.sorted { $0.setNumber < $1.setNumber }.last!
@@ -86,7 +87,7 @@ private func makeFixture(target: Int = 5, restOnSuccess: Int = 90, restOnFail: I
     #expect(model.transitionPrompt?.isFinalExercise == false)
 }
 
-@Test func dismissTransitionPromptClearsIt() async throws {
+@Test @MainActor func dismissTransitionPromptClearsIt() async throws {
     let (log, config) = try makeFixture()
     let model = ActiveWorkoutViewModel(settleDelay: .milliseconds(20))
     let set = log.sets.sorted { $0.setNumber < $1.setNumber }.last!

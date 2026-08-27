@@ -3,7 +3,8 @@ import SwiftData
 import Observation
 
 @Observable
-public final class ActiveWorkoutViewModel: @unchecked Sendable {
+@MainActor
+public final class ActiveWorkoutViewModel {
     public struct ActiveRest: Equatable {
         public let outcome: RestOutcome
         public let endDate: Date
@@ -16,6 +17,11 @@ public final class ActiveWorkoutViewModel: @unchecked Sendable {
 
     public private(set) var activeRest: ActiveRest?
     public private(set) var transitionPrompt: TransitionPrompt?
+
+    /// Number of settle tasks that have actually run to completion (past cancellation and
+    /// nil-value guards) and mutated `activeRest`/`transitionPrompt`. Exposed for testing the
+    /// debounce/cancellation guarantee — production code should not rely on this.
+    private(set) var settleFireCount = 0
 
     private let settleDelay: Duration
     private var pendingSettleTasks: [PersistentIdentifier: Task<Void, Never>] = [:]
@@ -46,6 +52,8 @@ public final class ActiveWorkoutViewModel: @unchecked Sendable {
             guard !Task.isCancelled else { return }
             self?.pendingSettleTasks[setID] = nil
             guard let value = capturedValue else { return }
+
+            self?.settleFireCount += 1
 
             let outcome: RestOutcome = value >= targetReps ? .success : .fail
             if isLastSet {
