@@ -8,11 +8,21 @@ public final class ActiveWorkoutViewModel {
     public struct ActiveRest: Equatable {
         public let outcome: RestOutcome
         public let endDate: Date
+
+        public init(outcome: RestOutcome, endDate: Date) {
+            self.outcome = outcome
+            self.endDate = endDate
+        }
     }
 
     public struct TransitionPrompt: Equatable {
         public let exerciseName: String
         public let isFinalExercise: Bool
+
+        public init(exerciseName: String, isFinalExercise: Bool) {
+            self.exerciseName = exerciseName
+            self.isFinalExercise = isFinalExercise
+        }
     }
 
     public private(set) var activeRest: ActiveRest?
