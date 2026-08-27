@@ -93,8 +93,8 @@ public final class ActiveWorkoutViewModel {
         guard let completion,
               let log = logs.first(where: { $0.persistentModelID == completion.logID }) else { return }
 
-        if let last = log.sets.sorted(by: { $0.setNumber < $1.setNumber }).last {
-            last.repsCompleted = nil
+        if let lastSet = log.sortedSets.last {
+            lastSet.repsCompleted = nil
         }
         activeRest = nil
         expandedLogID = completion.logID
@@ -105,8 +105,8 @@ public final class ActiveWorkoutViewModel {
 
     /// Called on appear and after each exercise finishes.
     public func focusFirstIncomplete(in logs: [ExerciseLog]) {
-        let sorted = logs.sorted { $0.order < $1.order }
-        expandedLogID = (sorted.first { $0.hasUnloggedSets } ?? sorted.last)?.persistentModelID
+        let sortedLogs = logs.sorted { $0.order < $1.order }
+        expandedLogID = (sortedLogs.first { $0.hasUnloggedSets } ?? sortedLogs.last)?.persistentModelID
     }
 
     // MARK: - Private
@@ -115,7 +115,7 @@ public final class ActiveWorkoutViewModel {
         let setID = set.persistentModelID
         pendingSettleTasks[setID]?.cancel()
 
-        let capturedValue = set.repsCompleted
+        let settledReps = set.repsCompleted
         let targetReps = log.targetReps
         let exerciseName = log.exercise?.name ?? ""
         let logID = log.persistentModelID
@@ -124,25 +124,23 @@ public final class ActiveWorkoutViewModel {
         let delay = settleDelay
 
         // Snapshot what the exercise looks like once this value settles.
-        let sortedSets = log.sets.sorted { $0.setNumber < $1.setNumber }
-        let isLastSet = set.setNumber == sortedSets.last?.setNumber
-        let exerciseFinishes = sortedSets.allSatisfy { $0.repsCompleted != nil }
-        let repsSummary = sortedSets
-            .map { $0.repsCompleted.map(String.init) ?? "–" }
-            .joined(separator: " ")
+        let sortedSets = log.sortedSets
+        let exerciseIsComplete = sortedSets.allSatisfy { $0.repsCompleted != nil }
+        let repsSummary = log.repsSummary
         let nextSetNumber = sortedSets.first { $0.repsCompleted == nil }?.setNumber
 
         pendingSettleTasks[setID] = Task { [weak self] in
             try? await Task.sleep(for: delay)
-            guard !Task.isCancelled else { return }
-            self?.pendingSettleTasks[setID] = nil
-            guard let value = capturedValue else { return }
+            guard !Task.isCancelled, let self else { return }
 
-            self?.settleFireCount += 1
-            let outcome: RestOutcome = value >= targetReps ? .success : .fail
+            pendingSettleTasks[setID] = nil
+            guard let settledReps else { return }
 
-            if exerciseFinishes {
-                self?.publishCompletion(
+            settleFireCount += 1
+            let outcome: RestOutcome = settledReps >= targetReps ? .success : .fail
+
+            if exerciseIsComplete {
+                publishCompletion(
                     Completion(
                         logID: logID,
                         exerciseName: exerciseName,
@@ -154,32 +152,38 @@ public final class ActiveWorkoutViewModel {
 
             // Rest still runs between exercises — only the final set of the
             // final exercise ends without one.
-            let endsWorkout = exerciseFinishes && isFinalExercise
+            let endsWorkout = exerciseIsComplete && isFinalExercise
             guard !endsWorkout else {
-                self?.activeRest = nil
+                activeRest = nil
                 return
             }
 
-            let seconds = outcome == .success ? restOnSuccess : restOnFail
-            let label: String
-            if exerciseFinishes {
-                label = "Rest · next exercise"
-            } else if let nextSetNumber {
-                label = "Rest · set \(nextSetNumber) next"
-            } else if isLastSet {
-                label = "Rest"
-            } else {
-                label = "Rest"
-            }
-
-            let now = Date()
-            self?.activeRest = ActiveRest(
+            startRest(
                 outcome: outcome,
-                startDate: now,
-                endDate: now.addingTimeInterval(TimeInterval(seconds)),
-                nextUpLabel: label
+                seconds: outcome == .success ? restOnSuccess : restOnFail,
+                label: Self.restLabel(exerciseIsComplete: exerciseIsComplete, nextSetNumber: nextSetNumber)
             )
         }
+    }
+
+    private static func restLabel(exerciseIsComplete: Bool, nextSetNumber: Int?) -> String {
+        if exerciseIsComplete {
+            return "Rest · next exercise"
+        }
+        if let nextSetNumber {
+            return "Rest · set \(nextSetNumber) next"
+        }
+        return "Rest"
+    }
+
+    private func startRest(outcome: RestOutcome, seconds: Int, label: String) {
+        let now = Date()
+        activeRest = ActiveRest(
+            outcome: outcome,
+            startDate: now,
+            endDate: now.addingTimeInterval(TimeInterval(seconds)),
+            nextUpLabel: label
+        )
     }
 
     private func publishCompletion(_ value: Completion) {

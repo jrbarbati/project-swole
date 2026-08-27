@@ -7,12 +7,12 @@ struct RootView: View {
            sort: \WorkoutSession.startedAt, order: .reverse)
     private var activeSessions: [WorkoutSession]
 
-    @State private var tab: Tab = .today
+    @State private var selectedTab: Tab = .today
 
     enum Tab: Hashable { case today, history, settings }
 
     var body: some View {
-        TabView(selection: $tab) {
+        TabView(selection: $selectedTab) {
             NavigationStack { TodayView() }
                 .tag(Tab.today)
                 .tabItem { Label("Today", systemImage: "square.grid.2x2") }
@@ -43,24 +43,25 @@ struct RootView: View {
 struct CustomTabBar: View {
     @Binding var selection: RootView.Tab
 
-    private let items: [(RootView.Tab, String)] = [
+    private let items: [(tab: RootView.Tab, title: String)] = [
         (.today, "Today"), (.history, "History"), (.settings, "Settings"),
     ]
 
     var body: some View {
         HStack(spacing: 0) {
-            ForEach(items, id: \.0) { tab, title in
+            ForEach(items, id: \.tab) { item in
+                let isSelected = selection == item.tab
                 Button {
-                    selection = tab
+                    selection = item.tab
                 } label: {
                     VStack(spacing: 7) {
                         Circle()
-                            .fill(selection == tab ? Theme.accent : .clear)
+                            .fill(isSelected ? Theme.accent : .clear)
                             .frame(width: 5, height: 5)
-                        Text(title.uppercased())
+                        Text(item.title.uppercased())
                             .font(Theme.Font.label())
                             .tracking(1.2)
-                            .foregroundStyle(selection == tab ? Theme.textPrimary : Theme.textDim)
+                            .foregroundStyle(isSelected ? Theme.textPrimary : Theme.textDim)
                     }
                     .frame(maxWidth: .infinity)
                     .frame(height: Theme.minTouchTarget)

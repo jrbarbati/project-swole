@@ -5,7 +5,7 @@ public enum ProgressionCalculator {
     private static func sortedLogs(for exercise: Exercise, in context: ModelContext) throws -> [ExerciseLog] {
         let exerciseID = exercise.persistentModelID
         let allLogs = try context.fetch(FetchDescriptor<ExerciseLog>())
-        
+
         return allLogs
             .filter { $0.exercise?.persistentModelID == exerciseID }
             .sorted { ($0.session?.startedAt ?? .distantPast) > ($1.session?.startedAt ?? .distantPast) }
@@ -14,21 +14,21 @@ public enum ProgressionCalculator {
     public static func currentFailStreak(for exercise: Exercise, in context: ModelContext) throws -> Int {
         let logs = try sortedLogs(for: exercise, in: context)
         var streak = 0
-        var streakWeight: Double?
-        
+        var previousFailWeight: Double?
+
         for log in logs {
             if log.succeeded {
                 break
             }
 
-            if let streakWeight, log.targetWeight > streakWeight {
+            if let previousFailWeight, log.targetWeight > previousFailWeight {
                 break
             }
-            
+
             streak += 1
-            streakWeight = log.targetWeight
+            previousFailWeight = log.targetWeight
         }
-        
+
         return streak
     }
 
@@ -37,16 +37,16 @@ public enum ProgressionCalculator {
         guard let lastLog = logs.first else {
             return config.startingWeight
         }
-        
+
         if lastLog.succeeded {
             return lastLog.targetWeight + config.weightIncrement
         }
-        
-        let streak = try currentFailStreak(for: exercise, in: context)
-        if streak >= config.deloadThreshold {
+
+        let failStreak = try currentFailStreak(for: exercise, in: context)
+        if failStreak >= config.deloadThreshold {
             return lastLog.targetWeight * (1 - config.deloadPercentage)
         }
-        
+
         return lastLog.targetWeight
     }
 }

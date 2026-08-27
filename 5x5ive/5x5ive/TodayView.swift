@@ -37,25 +37,9 @@ struct TodayView: View {
                 .padding(.top, 22)
                 .padding(.horizontal, Theme.Space.screen)
 
-            VStack(spacing: Theme.Space.cardGap) {
-                ForEach(nextEntries) { entry in
-                    if let exercise = entry.exercise, let config = config(for: exercise) {
-                        NextLiftRow(
-                            exercise: exercise,
-                            config: config,
-                            unit: settings?.unit ?? .lb,
-                            targetWeight: targetWeight(for: exercise, config: config),
-                            failStreak: failStreak(for: exercise)
-                        )
-                    }
-                }
-                if let holdNote {
-                    MetaLabel(text: holdNote, color: Theme.textFaint)
-                        .padding(.horizontal, 4)
-                }
-            }
-            .padding(.top, 26)
-            .padding(.horizontal, Theme.Space.screen)
+            liftList
+                .padding(.top, 26)
+                .padding(.horizontal, Theme.Space.screen)
 
             Spacer(minLength: 0)
 
@@ -67,23 +51,47 @@ struct TodayView: View {
                     .padding(.bottom, 10)
             }
 
-            Button {
-                startWorkout()
-            } label: {
-                Text("Start Workout \(nextWorkoutType.rawValue)")
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundStyle(Theme.accentInk)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 60)
-                    .background(Theme.accent, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            }
-            .buttonStyle(.plain)
-            .disabled(settings == nil)
-            .padding(.horizontal, Theme.Space.screen)
-            .padding(.bottom, 12)
+            startButton
+                .padding(.horizontal, Theme.Space.screen)
+                .padding(.bottom, 12)
         }
         .background(Theme.canvas)
         .toolbar(.hidden, for: .navigationBar)
+    }
+
+    private var liftList: some View {
+        VStack(spacing: Theme.Space.cardGap) {
+            ForEach(nextEntries) { entry in
+                if let exercise = entry.exercise, let config = config(for: exercise) {
+                    NextLiftRow(
+                        exercise: exercise,
+                        config: config,
+                        unit: settings?.unit ?? .lb,
+                        targetWeight: targetWeight(for: exercise, config: config),
+                        failStreak: failStreak(for: exercise)
+                    )
+                }
+            }
+            if let holdNote {
+                MetaLabel(text: holdNote, color: Theme.textFaint)
+                    .padding(.horizontal, 4)
+            }
+        }
+    }
+
+    private var startButton: some View {
+        Button {
+            startWorkout()
+        } label: {
+            Text("Start Workout \(nextWorkoutType.rawValue)")
+                .font(.system(size: 18, weight: .bold))
+                .foregroundStyle(Theme.accentInk)
+                .frame(maxWidth: .infinity)
+                .frame(height: 60)
+                .background(Theme.accent, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .disabled(settings == nil)
     }
 
     private var header: some View {
@@ -107,8 +115,8 @@ struct TodayView: View {
             let streak = failStreak(for: exercise)
             guard streak > 0 else { continue }
             let weight = targetWeight(for: exercise, config: config)
-            let noun = exercise.name.split(separator: " ").last.map(String.init) ?? exercise.name
-            return "\(noun) held — \(streak) miss\(streak == 1 ? "" : "es") at \(weight.formatted())"
+            let shortName = exercise.name.split(separator: " ").last.map(String.init) ?? exercise.name
+            return "\(shortName) held — \(streak) miss\(streak == 1 ? "" : "es") at \(weight.formatted())"
         }
         return nil
     }

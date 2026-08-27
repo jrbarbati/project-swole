@@ -15,62 +15,14 @@ struct SessionDetailView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                VStack(alignment: .leading, spacing: 14) {
-                    HStack(alignment: .firstTextBaseline, spacing: 12) {
-                        Text("Workout \(session.workoutType.rawValue)")
-                            .font(Theme.Font.display(34))
-                            .foregroundStyle(Theme.textPrimary)
-                        MetaLabel(text: session.startedAt.formatted(.dateTime.month(.abbreviated).day()),
-                                  color: Theme.textDim)
-                    }
-                    HStack(spacing: 18) {
-                        MetaLabel(text: durationText)
-                        MetaLabel(text: "\(session.volume.formatted(.number.precision(.fractionLength(0)))) \(unit.rawValue)")
-                        MetaLabel(text: "\(session.loggedSetCount)/\(session.totalSetCount) sets")
-                    }
-                }
-                .padding(.top, 14)
+                header
+                    .padding(.top, 14)
 
-                VStack(spacing: 12) {
-                    ForEach(session.sortedLogs) { log in
-                        LoggedExerciseCard(log: log, unit: unit, warning: deloadWarning(for: log))
-                    }
+                loggedExercises
+                    .padding(.top, 26)
 
-                    if let note = session.note, !note.isEmpty {
-                        Text(note)
-                            .font(Theme.Font.body(14))
-                            .foregroundStyle(Theme.textSecondary)
-                            .lineSpacing(3)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.vertical, 14)
-                            .padding(.horizontal, Theme.Space.cardPadding)
-                            .background(Theme.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                    .stroke(Theme.border, lineWidth: 1)
-                            )
-                    }
-                }
-                .padding(.top, 26)
-
-                Button {
-                    // Starting from history uses the same service call as Today —
-                    // the schedule decides the type, so this is just a shortcut.
-                    _ = try? WorkoutSessionService.startWorkout(in: modelContext)
-                    dismiss()
-                } label: {
-                    Text("Repeat this workout")
-                        .font(Theme.Font.body(15))
-                        .foregroundStyle(Theme.textMuted)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 50)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous)
-                                .stroke(Theme.borderStrong, lineWidth: 1)
-                        )
-                }
-                .buttonStyle(.plain)
-                .padding(.top, 20)
+                repeatButton
+                    .padding(.top, 20)
             }
             .padding(.horizontal, Theme.Space.screen)
             .padding(.bottom, 24)
@@ -78,6 +30,70 @@ struct SessionDetailView: View {
         .background(Theme.canvas)
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private var header: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .firstTextBaseline, spacing: 12) {
+                Text("Workout \(session.workoutType.rawValue)")
+                    .font(Theme.Font.display(34))
+                    .foregroundStyle(Theme.textPrimary)
+                MetaLabel(text: session.startedAt.formatted(.dateTime.month(.abbreviated).day()),
+                          color: Theme.textDim)
+            }
+            HStack(spacing: 18) {
+                MetaLabel(text: durationText)
+                MetaLabel(text: "\(session.volume.formatted(.number.precision(.fractionLength(0)))) \(unit.rawValue)")
+                MetaLabel(text: "\(session.loggedSetCount)/\(session.totalSetCount) sets")
+            }
+        }
+    }
+
+    private var loggedExercises: some View {
+        VStack(spacing: 12) {
+            ForEach(session.sortedLogs) { log in
+                LoggedExerciseCard(log: log, unit: unit, warning: deloadWarning(for: log))
+            }
+
+            if let note = session.note, !note.isEmpty {
+                noteCard(note)
+            }
+        }
+    }
+
+    private func noteCard(_ note: String) -> some View {
+        Text(note)
+            .font(Theme.Font.body(14))
+            .foregroundStyle(Theme.textSecondary)
+            .lineSpacing(3)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, 14)
+            .padding(.horizontal, Theme.Space.cardPadding)
+            .background(Theme.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(Theme.border, lineWidth: 1)
+            )
+    }
+
+    private var repeatButton: some View {
+        Button {
+            // Starting from history uses the same service call as Today —
+            // the schedule decides the type, so this is just a shortcut.
+            _ = try? WorkoutSessionService.startWorkout(in: modelContext)
+            dismiss()
+        } label: {
+            Text("Repeat this workout")
+                .font(Theme.Font.body(15))
+                .foregroundStyle(Theme.textMuted)
+                .frame(maxWidth: .infinity)
+                .frame(height: 50)
+                .overlay(
+                    RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous)
+                        .stroke(Theme.borderStrong, lineWidth: 1)
+                )
+        }
+        .buttonStyle(.plain)
     }
 
     private var durationText: String {
@@ -95,8 +111,14 @@ struct SessionDetailView: View {
               streak > 0
         else { return nil }
 
+        let ordinal: String
+        switch streak {
+        case 1: ordinal = "1st"
+        case 2: ordinal = "2nd"
+        default: ordinal = "\(streak)th"
+        }
+
         let remaining = config.deloadThreshold - streak
-        let ordinal = streak == 1 ? "1st" : streak == 2 ? "2nd" : "\(streak)th"
         if remaining <= 0 {
             return "\(ordinal) miss at \(log.targetWeight.formatted()) · deload applied"
         }
@@ -126,18 +148,7 @@ private struct LoggedExerciseCard: View {
             // Shorter than the interactive tiles (46pt) — nothing here is tappable.
             HStack(spacing: Theme.Space.tileGap) {
                 ForEach(log.sortedSets) { set in
-                    let reps = set.repsCompleted ?? 0
-                    Text("\(reps)")
-                        .font(Theme.Font.numeric(18))
-                        .foregroundStyle(reps >= log.targetReps ? Theme.accentText
-                                         : reps == 0 ? Theme.textFaint : Theme.miss)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 46)
-                        .background(
-                            reps >= log.targetReps ? Theme.accent.opacity(0.14)
-                            : reps == 0 ? Theme.surfaceSunken : Theme.missFill,
-                            in: RoundedRectangle(cornerRadius: 11, style: .continuous)
-                        )
+                    repsTile(reps: set.repsCompleted ?? 0)
                 }
             }
 
@@ -151,5 +162,29 @@ private struct LoggedExerciseCard: View {
             RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous)
                 .stroke(Theme.border, lineWidth: 1)
         )
+    }
+
+    private func repsTile(reps: Int) -> some View {
+        Text("\(reps)")
+            .font(Theme.Font.numeric(18))
+            .foregroundStyle(textColor(forReps: reps))
+            .frame(maxWidth: .infinity)
+            .frame(height: 46)
+            .background(
+                fill(forReps: reps),
+                in: RoundedRectangle(cornerRadius: 11, style: .continuous)
+            )
+    }
+
+    private func textColor(forReps reps: Int) -> Color {
+        if reps >= log.targetReps { return Theme.accentText }
+        if reps == 0 { return Theme.textFaint }
+        return Theme.miss
+    }
+
+    private func fill(forReps reps: Int) -> Color {
+        if reps >= log.targetReps { return Theme.accent.opacity(0.14) }
+        if reps == 0 { return Theme.surfaceSunken }
+        return Theme.missFill
     }
 }

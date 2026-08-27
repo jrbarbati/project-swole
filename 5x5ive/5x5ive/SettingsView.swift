@@ -24,57 +24,9 @@ struct SettingsView: View {
                     .foregroundStyle(Theme.textPrimary)
                     .padding(.top, 14)
 
-                Section2(title: "Working weights") {
-                    VStack(spacing: 0) {
-                        ForEach(sortedConfigs) { config in
-                            WeightRow(config: config, unit: settings?.unit ?? .lb) {
-                                try? modelContext.save()
-                            }
-                        }
-                    }
-                }
-
-                Section2(title: "Rest") {
-                    HStack(spacing: 10) {
-                        RestCard(label: "After success",
-                                 seconds: sortedConfigs.first?.restSecondsOnSuccess ?? 90)
-                        RestCard(label: "After a miss",
-                                 seconds: sortedConfigs.first?.restSecondsOnFail ?? 180)
-                    }
-                }
-
-                Section2(title: "Preferences") {
-                    VStack(spacing: 0) {
-                        SettingRow(title: "Units") {
-                            SegmentedPair(
-                                options: ["LB", "KG"],
-                                selection: (settings?.unit ?? .lb) == .lb ? "LB" : "KG"
-                            ) { picked in
-                                settings?.unit = picked == "LB" ? .lb : .kg
-                                try? modelContext.save()
-                            }
-                        }
-                        SettingRow(title: "Appearance") {
-                            SegmentedPair(
-                                options: ["DARK", "LIGHT"],
-                                selection: appearance == "dark" ? "DARK" : "LIGHT"
-                            ) { picked in
-                                appearance = picked == "DARK" ? "dark" : "light"
-                            }
-                        }
-                        SettingRow(title: "Deload after",
-                                   subtitle: "Drop \(Int((sortedConfigs.first?.deloadPercentage ?? 0.1) * 100))% after repeated misses") {
-                            Text("\(sortedConfigs.first?.deloadThreshold ?? 3) ›")
-                                .font(Theme.Font.numeric(16))
-                                .foregroundStyle(Theme.textMuted)
-                        }
-                        SettingRow(title: "Warmup sets", showsDivider: false) {
-                            Toggle("", isOn: $showWarmups)
-                                .labelsHidden()
-                                .tint(Theme.accent)
-                        }
-                    }
-                }
+                workingWeightsSection
+                restSection
+                preferencesSection
             }
             .padding(.horizontal, Theme.Space.screen)
             .padding(.bottom, 24)
@@ -83,11 +35,73 @@ struct SettingsView: View {
         .toolbar(.hidden, for: .navigationBar)
         .preferredColorScheme(appearance == "dark" ? .dark : .light)
     }
+
+    private var workingWeightsSection: some View {
+        SettingsSection(title: "Working weights") {
+            VStack(spacing: 0) {
+                ForEach(sortedConfigs) { config in
+                    WeightRow(config: config, unit: settings?.unit ?? .lb) {
+                        try? modelContext.save()
+                    }
+                }
+            }
+        }
+    }
+
+    private var restSection: some View {
+        SettingsSection(title: "Rest") {
+            HStack(spacing: 10) {
+                RestCard(label: "After success",
+                         seconds: sortedConfigs.first?.restSecondsOnSuccess ?? 90)
+                RestCard(label: "After a miss",
+                         seconds: sortedConfigs.first?.restSecondsOnFail ?? 180)
+            }
+        }
+    }
+
+    private var preferencesSection: some View {
+        SettingsSection(title: "Preferences") {
+            VStack(spacing: 0) {
+                SettingRow(title: "Units") {
+                    SegmentedPair(
+                        options: ["LB", "KG"],
+                        selection: (settings?.unit ?? .lb) == .lb ? "LB" : "KG"
+                    ) { picked in
+                        settings?.unit = picked == "LB" ? .lb : .kg
+                        try? modelContext.save()
+                    }
+                }
+                SettingRow(title: "Appearance") {
+                    SegmentedPair(
+                        options: ["DARK", "LIGHT"],
+                        selection: appearance == "dark" ? "DARK" : "LIGHT"
+                    ) { picked in
+                        appearance = picked == "DARK" ? "dark" : "light"
+                    }
+                }
+                SettingRow(title: "Deload after", subtitle: deloadSubtitle) {
+                    Text("\(sortedConfigs.first?.deloadThreshold ?? 3) ›")
+                        .font(Theme.Font.numeric(16))
+                        .foregroundStyle(Theme.textMuted)
+                }
+                SettingRow(title: "Warmup sets", showsDivider: false) {
+                    Toggle("", isOn: $showWarmups)
+                        .labelsHidden()
+                        .tint(Theme.accent)
+                }
+            }
+        }
+    }
+
+    private var deloadSubtitle: String {
+        let percentage = Int((sortedConfigs.first?.deloadPercentage ?? 0.1) * 100)
+        return "Drop \(percentage)% after repeated misses"
+    }
 }
 
 // MARK: - Pieces
 
-private struct Section2<Content: View>: View {
+private struct SettingsSection<Content: View>: View {
     let title: String
     @ViewBuilder let content: Content
 

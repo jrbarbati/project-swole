@@ -24,104 +24,129 @@ struct ExerciseDetailSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack(alignment: .firstTextBaseline) {
-                Text(log.exercise?.name ?? "")
-                    .font(Theme.Font.display(26))
-                    .foregroundStyle(Theme.textPrimary)
-                Spacer()
-                Text("\(log.targetWeight.formatted()) \(unit.rawValue.uppercased())")
-                    .font(Theme.Font.numeric(15))
-                    .foregroundStyle(Theme.textMuted)
-            }
-            .padding(.top, 20)
+            header
 
             if !warmups.isEmpty {
-                section("Warmup") {
-                    VStack(spacing: 7) {
-                        ForEach(warmups) { warmup in
-                            Button {
-                                toggle(warmup.id)
-                            } label: {
-                                HStack {
-                                    Text("\(warmup.weight.formatted()) \(unit.rawValue.uppercased()) × \(warmup.reps)")
-                                        .font(Theme.Font.numeric(14))
-                                        .foregroundStyle(Theme.textSecondary)
-                                    Spacer()
-                                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                        .fill(completedWarmups.contains(warmup.id) ? Theme.accent.opacity(0.2) : Theme.surface)
-                                        .frame(width: 26, height: 26)
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                                .stroke(completedWarmups.contains(warmup.id) ? Theme.accentStroke : Theme.borderStrong,
-                                                        lineWidth: 1)
-                                        )
-                                }
-                                .padding(.vertical, 12)
-                                .padding(.horizontal, 14)
-                                .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.Radius.tile, style: .continuous))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: Theme.Radius.tile, style: .continuous)
-                                        .stroke(Theme.border, lineWidth: 1)
-                                )
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                }
+                warmupSection
             }
 
-            section("Last \(history.count) sessions", trailing: trendLabel) {
-                WeightTrendChart(logs: history, currentWeight: log.targetWeight)
-                    .frame(height: 104)
-            }
-
-            section("Note") {
-                TextField("Anything worth remembering", text: $note, axis: .vertical)
-                    .font(Theme.Font.body(14))
-                    .foregroundStyle(Theme.textPrimary)
-                    .padding(14)
-                    .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.Radius.tile, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: Theme.Radius.tile, style: .continuous)
-                            .stroke(Theme.border, lineWidth: 1)
-                    )
-            }
+            trendSection
+            noteSection
 
             Spacer(minLength: 12)
 
-            HStack(spacing: 10) {
-                NavigationLink {
-                    SettingsView()
-                } label: {
-                    Text("Edit weight")
-                        .font(Theme.Font.body(15))
-                        .foregroundStyle(Theme.textMuted)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 52)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous)
-                                .stroke(Theme.borderStrong, lineWidth: 1)
-                        )
-                }
-                Button {
-                    save()
-                    dismiss()
-                } label: {
-                    Text("Done")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(Theme.canvas)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 52)
-                        .background(Theme.textPrimary, in: RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous))
-                }
-                .buttonStyle(.plain)
-            }
+            actionRow
         }
         .padding(.horizontal, 22)
         .padding(.bottom, 22)
         .background(Theme.canvas)
         .presentationDragIndicator(.visible)
-        .task { await load() }
+        .task { await loadHistory() }
+    }
+
+    // MARK: Sections
+
+    private var header: some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text(log.exercise?.name ?? "")
+                .font(Theme.Font.display(26))
+                .foregroundStyle(Theme.textPrimary)
+            Spacer()
+            Text("\(log.targetWeight.formatted()) \(unit.rawValue.uppercased())")
+                .font(Theme.Font.numeric(15))
+                .foregroundStyle(Theme.textMuted)
+        }
+        .padding(.top, 20)
+    }
+
+    private var warmupSection: some View {
+        section("Warmup") {
+            VStack(spacing: 7) {
+                ForEach(warmups) { warmup in
+                    warmupRow(warmup)
+                }
+            }
+        }
+    }
+
+    private func warmupRow(_ warmup: WarmupSet) -> some View {
+        let isDone = completedWarmups.contains(warmup.id)
+        return Button {
+            toggleWarmup(warmup.id)
+        } label: {
+            HStack {
+                Text("\(warmup.weight.formatted()) \(unit.rawValue.uppercased()) × \(warmup.reps)")
+                    .font(Theme.Font.numeric(14))
+                    .foregroundStyle(Theme.textSecondary)
+                Spacer()
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(isDone ? Theme.accent.opacity(0.2) : Theme.surface)
+                    .frame(width: 26, height: 26)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .stroke(isDone ? Theme.accentStroke : Theme.borderStrong, lineWidth: 1)
+                    )
+            }
+            .padding(.vertical, 12)
+            .padding(.horizontal, 14)
+            .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.Radius.tile, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: Theme.Radius.tile, style: .continuous)
+                    .stroke(Theme.border, lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var trendSection: some View {
+        section("Last \(history.count) sessions", trailing: trendLabel) {
+            WeightTrendChart(logs: history, currentWeight: log.targetWeight)
+                .frame(height: 104)
+        }
+    }
+
+    private var noteSection: some View {
+        section("Note") {
+            TextField("Anything worth remembering", text: $note, axis: .vertical)
+                .font(Theme.Font.body(14))
+                .foregroundStyle(Theme.textPrimary)
+                .padding(14)
+                .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.Radius.tile, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: Theme.Radius.tile, style: .continuous)
+                        .stroke(Theme.border, lineWidth: 1)
+                )
+        }
+    }
+
+    private var actionRow: some View {
+        HStack(spacing: 10) {
+            NavigationLink {
+                SettingsView()
+            } label: {
+                Text("Edit weight")
+                    .font(Theme.Font.body(15))
+                    .foregroundStyle(Theme.textMuted)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 52)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous)
+                            .stroke(Theme.borderStrong, lineWidth: 1)
+                    )
+            }
+            Button {
+                save()
+                dismiss()
+            } label: {
+                Text("Done")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(Theme.canvas)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 52)
+                    .background(Theme.textPrimary, in: RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous))
+            }
+            .buttonStyle(.plain)
+        }
     }
 
     private var trendLabel: String? {
@@ -150,12 +175,18 @@ struct ExerciseDetailSheet: View {
         .padding(.top, 24)
     }
 
-    private func toggle(_ id: Int) {
-        if completedWarmups.contains(id) { completedWarmups.remove(id) } else { completedWarmups.insert(id) }
+    // MARK: Actions
+
+    private func toggleWarmup(_ id: Int) {
+        if completedWarmups.contains(id) {
+            completedWarmups.remove(id)
+        } else {
+            completedWarmups.insert(id)
+        }
     }
 
     @MainActor
-    private func load() async {
+    private func loadHistory() async {
         guard let exercise = log.exercise else { return }
         history = (try? ProgressionCalculator.recentLogs(for: exercise, limit: 8, in: modelContext)) ?? []
         note = log.note ?? ""
@@ -176,6 +207,8 @@ struct WeightTrendChart: View {
     let logs: [ExerciseLog]
     let currentWeight: Double
 
+    private let maxBarHeight: Double = 104
+
     private var maxWeight: Double {
         max(currentWeight, logs.map(\.targetWeight).max() ?? currentWeight, 1)
     }
@@ -184,15 +217,9 @@ struct WeightTrendChart: View {
         VStack(spacing: 8) {
             HStack(alignment: .bottom, spacing: 7) {
                 ForEach(logs) { entry in
-                    RoundedRectangle(cornerRadius: 5, style: .continuous)
-                        .fill(entry.succeeded ? Theme.borderStrong : Theme.missStroke)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: max(8, 104 * entry.targetWeight / maxWeight))
+                    bar(weight: entry.targetWeight, color: entry.succeeded ? Theme.borderStrong : Theme.missStroke)
                 }
-                RoundedRectangle(cornerRadius: 5, style: .continuous)
-                    .fill(Theme.accent)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: max(8, 104 * currentWeight / maxWeight))
+                bar(weight: currentWeight, color: Theme.accent)
             }
             HStack {
                 MetaLabel(text: (logs.first?.targetWeight ?? currentWeight).formatted(), color: Theme.textDim)
@@ -200,5 +227,12 @@ struct WeightTrendChart: View {
                 MetaLabel(text: "\(currentWeight.formatted()) today", color: Theme.textDim)
             }
         }
+    }
+
+    private func bar(weight: Double, color: Color) -> some View {
+        RoundedRectangle(cornerRadius: 5, style: .continuous)
+            .fill(color)
+            .frame(maxWidth: .infinity)
+            .frame(height: max(8, maxBarHeight * weight / maxWeight))
     }
 }

@@ -39,18 +39,19 @@ public enum PlateCalculator {
             return PlateMath(perSide: [], remainder: 0, barWeight: barWeight)
         }
 
+        let tolerance = 0.001
         var remainingPerSide = (target - barWeight) / 2
-        var picked: [Double] = []
+        var platesPerSide: [Double] = []
 
         for plate in available.sorted(by: >) {
-            while remainingPerSide + 0.001 >= plate {
-                picked.append(plate)
+            while remainingPerSide + tolerance >= plate {
+                platesPerSide.append(plate)
                 remainingPerSide -= plate
             }
         }
 
-        let remainder = remainingPerSide < 0.001 ? 0 : remainingPerSide * 2
-        return PlateMath(perSide: picked, remainder: remainder, barWeight: barWeight)
+        let remainder = remainingPerSide < tolerance ? 0 : remainingPerSide * 2
+        return PlateMath(perSide: platesPerSide, remainder: remainder, barWeight: barWeight)
     }
 
     public static func barWeight(for unit: MeasurementUnit) -> Double {

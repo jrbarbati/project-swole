@@ -4,7 +4,7 @@ import SwoleData
 
 @main
 struct _x5iveApp: App {
-    var sharedModelContainer: ModelContainer = {
+    let sharedModelContainer: ModelContainer = {
         let schema = swoleSchema
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 

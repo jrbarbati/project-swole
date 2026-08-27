@@ -33,17 +33,17 @@ public enum WarmupPlanner {
             (0.90, 2),
         ]
 
-        var seen = Set<Double>()
-        var result: [WarmupSet] = []
+        var usedWeights = Set<Double>()
+        var warmups: [WarmupSet] = []
 
         for (fraction, reps) in ramp {
-            let raw = barWeight + (workingWeight - barWeight) * fraction
-            let rounded = max(barWeight, (raw / increment).rounded(.down) * increment)
-            guard rounded < workingWeight, !seen.contains(rounded) else { continue }
-            seen.insert(rounded)
-            result.append(WarmupSet(id: result.count, weight: rounded, reps: reps))
+            let rampWeight = barWeight + (workingWeight - barWeight) * fraction
+            let loadableWeight = max(barWeight, (rampWeight / increment).rounded(.down) * increment)
+            guard loadableWeight < workingWeight, !usedWeights.contains(loadableWeight) else { continue }
+            usedWeights.insert(loadableWeight)
+            warmups.append(WarmupSet(id: warmups.count, weight: loadableWeight, reps: reps))
         }
 
-        return result
+        return warmups
     }
 }

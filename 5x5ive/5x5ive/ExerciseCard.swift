@@ -48,27 +48,7 @@ struct ExerciseCard: View {
 
     private var expandedBody: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .firstTextBaseline) {
-                Text(log.exercise?.name ?? "")
-                    .font(Theme.Font.display(19))
-                    .foregroundStyle(Theme.textPrimary)
-                Spacer()
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    HStack(alignment: .firstTextBaseline, spacing: 3) {
-                        Text(log.targetWeight.formatted(.number.precision(.fractionLength(0...1))))
-                            .font(Theme.Font.numeric(16))
-                            .foregroundStyle(Theme.textPrimary)
-                        Text(unit.rawValue.uppercased())
-                            .font(Theme.Font.label(11))
-                            .foregroundStyle(Theme.textMuted)
-                    }
-                    // Plate math is never hidden — it is the number the lifter
-                    // needs while standing at the rack.
-                    Text(plates.shortDescription)
-                        .font(Theme.Font.label())
-                        .foregroundStyle(Theme.textDim)
-                }
-            }
+            expandedHeader
 
             SetTileRow(
                 log: log,
@@ -76,33 +56,65 @@ struct ExerciseCard: View {
                 onHold: onHoldSet
             )
 
-            HStack {
-                if let missLabel {
-                    MetaLabel(text: missLabel, color: Theme.miss).tracking(1.2)
-                } else {
-                    MetaLabel(text: lastSessionSummary ?? " ", color: Theme.textDim).tracking(1.2)
-                }
-                Spacer()
-                Button(action: onShowDetail) {
-                    MetaLabel(text: "More")
-                        .tracking(1.2)
-                        .padding(.vertical, 5)
-                        .padding(.horizontal, 9)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: Theme.Radius.chip, style: .continuous)
-                                .stroke(Theme.borderStrong, lineWidth: 1)
-                        )
-                }
-                .buttonStyle(.plain)
-            }
+            expandedFooter
         }
         .padding(.vertical, 14)
         .padding(.horizontal, Theme.Space.cardPadding)
         .task { await loadLastSession() }
     }
 
+    private var expandedHeader: some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text(log.exercise?.name ?? "")
+                .font(Theme.Font.display(19))
+                .foregroundStyle(Theme.textPrimary)
+            Spacer()
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                weightReadout
+                // Plate math is never hidden — it is the number the lifter
+                // needs while standing at the rack.
+                Text(plates.shortDescription)
+                    .font(Theme.Font.label())
+                    .foregroundStyle(Theme.textDim)
+            }
+        }
+    }
+
+    private var weightReadout: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 3) {
+            Text(log.targetWeight.formatted(.number.precision(.fractionLength(0...1))))
+                .font(Theme.Font.numeric(16))
+                .foregroundStyle(Theme.textPrimary)
+            Text(unit.rawValue.uppercased())
+                .font(Theme.Font.label(11))
+                .foregroundStyle(Theme.textMuted)
+        }
+    }
+
+    private var expandedFooter: some View {
+        HStack {
+            if let missedSetLabel {
+                MetaLabel(text: missedSetLabel, color: Theme.miss).tracking(1.2)
+            } else {
+                MetaLabel(text: lastSessionSummary ?? " ", color: Theme.textDim).tracking(1.2)
+            }
+            Spacer()
+            Button(action: onShowDetail) {
+                MetaLabel(text: "More")
+                    .tracking(1.2)
+                    .padding(.vertical, 5)
+                    .padding(.horizontal, 9)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: Theme.Radius.chip, style: .continuous)
+                            .stroke(Theme.borderStrong, lineWidth: 1)
+                    )
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
     /// "SET 4 MISSED · LONGER REST" — explains why rest just got longer.
-    private var missLabel: String? {
+    private var missedSetLabel: String? {
         guard let missed = log.sortedSets.last(where: { ($0.repsCompleted ?? log.targetReps) < log.targetReps })
         else { return nil }
         return "Set \(missed.setNumber) missed · longer rest"
@@ -115,35 +127,44 @@ struct ExerciseCard: View {
             HStack {
                 HStack(spacing: 10) {
                     if isComplete {
-                        Circle()
-                            .fill(Theme.accent.opacity(0.2))
-                            .frame(width: 20, height: 20)
-                            .overlay(Circle().stroke(Theme.accentStroke, lineWidth: 1))
+                        completionDot
                     }
                     Text(log.exercise?.name ?? "")
                         .font(Theme.Font.title(isComplete ? 17 : 19))
                         .foregroundStyle(isComplete ? Theme.textMuted : Theme.textSecondary)
                 }
                 Spacer()
-                if isComplete {
-                    Text("\(log.targetWeight.formatted()) · \(log.repsSummary)")
-                        .font(Theme.Font.numeric(13))
-                        .foregroundStyle(Theme.textDim)
-                } else {
-                    HStack(alignment: .firstTextBaseline, spacing: 3) {
-                        Text(log.targetWeight.formatted(.number.precision(.fractionLength(0...1))))
-                            .font(Theme.Font.numeric(16))
-                        Text(unit.rawValue.uppercased())
-                            .font(Theme.Font.label(11))
-                    }
-                    .foregroundStyle(Theme.textDim)
-                }
+                collapsedReadout
             }
             .padding(.vertical, 14)
             .padding(.horizontal, Theme.Space.cardPadding)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+
+    private var completionDot: some View {
+        Circle()
+            .fill(Theme.accent.opacity(0.2))
+            .frame(width: 20, height: 20)
+            .overlay(Circle().stroke(Theme.accentStroke, lineWidth: 1))
+    }
+
+    @ViewBuilder
+    private var collapsedReadout: some View {
+        if isComplete {
+            Text("\(log.targetWeight.formatted()) · \(log.repsSummary)")
+                .font(Theme.Font.numeric(13))
+                .foregroundStyle(Theme.textDim)
+        } else {
+            HStack(alignment: .firstTextBaseline, spacing: 3) {
+                Text(log.targetWeight.formatted(.number.precision(.fractionLength(0...1))))
+                    .font(Theme.Font.numeric(16))
+                Text(unit.rawValue.uppercased())
+                    .font(Theme.Font.label(11))
+            }
+            .foregroundStyle(Theme.textDim)
+        }
     }
 
     // MARK: Data

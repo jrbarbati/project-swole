@@ -14,8 +14,8 @@ struct ActiveWorkoutView: View {
     @State private var showFinishConfirmation = false
     @State private var showCancelConfirmation = false
     @State private var showSummary = false
-    @State private var sheetLog: ExerciseLog?
-    @State private var picker: PickerTarget?
+    @State private var detailLog: ExerciseLog?
+    @State private var repPickerTarget: PickerTarget?
 
     private var unit: MeasurementUnit { settingsList.first?.unit ?? .lb }
     private var logs: [ExerciseLog] { session.sortedLogs }
@@ -32,41 +32,13 @@ struct ActiveWorkoutView: View {
             header
 
             if let completion = viewModel.completion {
-                CompletionBanner(completion: completion) {
-                    viewModel.undoCompletion(in: logs)
-                    try? modelContext.save()
-                }
-                .padding(.horizontal, Theme.Space.screenTight)
-                .padding(.bottom, 12)
-                .transition(.move(edge: .top).combined(with: .opacity))
+                completionBanner(for: completion)
             }
 
             if logs.isEmpty {
-                Spacer()
-                Text("No exercises in this workout.")
-                    .font(Theme.Font.body())
-                    .foregroundStyle(Theme.textMuted)
-                Spacer()
+                emptyState
             } else {
-                ScrollView {
-                    VStack(spacing: Theme.Space.cardGap) {
-                        ForEach(logs) { log in
-                            ExerciseCard(
-                                log: log,
-                                config: config(for: log),
-                                unit: unit,
-                                isExpanded: viewModel.expandedLogID == log.persistentModelID,
-                                onTapSet: { set in tap(set, in: log) },
-                                onHoldSet: { set in picker = PickerTarget(setLog: set, log: log) },
-                                onExpand: { viewModel.expandedLogID = log.persistentModelID },
-                                onShowDetail: { sheetLog = log }
-                            )
-                        }
-                    }
-                    .padding(.horizontal, Theme.Space.screenTight)
-                    .padding(.bottom, 8)
-                }
-                .scrollIndicators(.hidden)
+                exerciseList
             }
 
             RestBar(rest: viewModel.activeRest, onSkip: viewModel.skipRest)
@@ -80,35 +52,10 @@ struct ActiveWorkoutView: View {
             // Auto-advance: focus moves as soon as an exercise finishes.
             withAnimation(.snappy) { viewModel.focusFirstIncomplete(in: logs) }
         }
-        .sheet(item: $sheetLog) { log in
-            NavigationStack {
-                ExerciseDetailSheet(log: log, config: config(for: log), unit: unit)
-                    .toolbar(.hidden, for: .navigationBar)
-            }
-        }
-        .sheet(item: $picker) { target in
-            RepPickerSheet(
-                exerciseName: target.log.exercise?.name ?? "",
-                setNumber: target.setLog.setNumber,
-                targetReps: target.log.targetReps,
-                current: target.setLog.repsCompleted
-            ) { reps in
-                guard let config = config(for: target.log) else { return }
-                viewModel.setReps(
-                    reps,
-                    for: target.setLog,
-                    in: target.log,
-                    isFinalExercise: isFinal(target.log),
-                    config: config
-                )
-                try? modelContext.save()
-            }
-            .presentationDetents([.height(300)])
-        }
+        .sheet(item: $detailLog) { log in detailSheet(for: log) }
+        .sheet(item: $repPickerTarget) { target in repPickerSheet(for: target) }
         .fullScreenCover(isPresented: $showSummary) {
-            WorkoutSummaryView(session: session) {
-                finish()
-            } onBack: {
+            WorkoutSummaryView(session: session, onSave: finish) {
                 showSummary = false
             }
         }
@@ -147,6 +94,47 @@ struct ActiveWorkoutView: View {
         .padding(.bottom, 18)
     }
 
+    private func completionBanner(for completion: ActiveWorkoutViewModel.Completion) -> some View {
+        CompletionBanner(completion: completion) {
+            viewModel.undoCompletion(in: logs)
+            try? modelContext.save()
+        }
+        .padding(.horizontal, Theme.Space.screenTight)
+        .padding(.bottom, 12)
+        .transition(.move(edge: .top).combined(with: .opacity))
+    }
+
+    @ViewBuilder
+    private var emptyState: some View {
+        Spacer()
+        Text("No exercises in this workout.")
+            .font(Theme.Font.body())
+            .foregroundStyle(Theme.textMuted)
+        Spacer()
+    }
+
+    private var exerciseList: some View {
+        ScrollView {
+            VStack(spacing: Theme.Space.cardGap) {
+                ForEach(logs) { log in
+                    ExerciseCard(
+                        log: log,
+                        config: config(for: log),
+                        unit: unit,
+                        isExpanded: viewModel.expandedLogID == log.persistentModelID,
+                        onTapSet: { set in tapSet(set, in: log) },
+                        onHoldSet: { set in repPickerTarget = PickerTarget(setLog: set, log: log) },
+                        onExpand: { viewModel.expandedLogID = log.persistentModelID },
+                        onShowDetail: { detailLog = log }
+                    )
+                }
+            }
+            .padding(.horizontal, Theme.Space.screenTight)
+            .padding(.bottom, 8)
+        }
+        .scrollIndicators(.hidden)
+    }
+
     private var actionRow: some View {
         HStack(spacing: 10) {
             Button {
@@ -180,11 +168,44 @@ struct ActiveWorkoutView: View {
         .padding(.bottom, 8)
     }
 
+    // MARK: Sheets
+
+    private func detailSheet(for log: ExerciseLog) -> some View {
+        NavigationStack {
+            ExerciseDetailSheet(log: log, config: config(for: log), unit: unit)
+                .toolbar(.hidden, for: .navigationBar)
+        }
+    }
+
+    private func repPickerSheet(for target: PickerTarget) -> some View {
+        RepPickerSheet(
+            exerciseName: target.log.exercise?.name ?? "",
+            setNumber: target.setLog.setNumber,
+            targetReps: target.log.targetReps,
+            currentReps: target.setLog.repsCompleted
+        ) { reps in
+            pickReps(reps, for: target)
+        }
+        .presentationDetents([.height(300)])
+    }
+
     // MARK: Actions
 
-    private func tap(_ set: SetLog, in log: ExerciseLog) {
+    private func tapSet(_ set: SetLog, in log: ExerciseLog) {
         guard let config = config(for: log) else { return }
-        viewModel.tap(set: set, in: log, isFinalExercise: isFinal(log), config: config)
+        viewModel.tap(set: set, in: log, isFinalExercise: isFinalExercise(log), config: config)
+        try? modelContext.save()
+    }
+
+    private func pickReps(_ reps: Int?, for target: PickerTarget) {
+        guard let config = config(for: target.log) else { return }
+        viewModel.setReps(
+            reps,
+            for: target.setLog,
+            in: target.log,
+            isFinalExercise: isFinalExercise(target.log),
+            config: config
+        )
         try? modelContext.save()
     }
 
@@ -192,7 +213,7 @@ struct ActiveWorkoutView: View {
         configs.first { $0.exercise?.persistentModelID == log.exercise?.persistentModelID }
     }
 
-    private func isFinal(_ log: ExerciseLog) -> Bool {
+    private func isFinalExercise(_ log: ExerciseLog) -> Bool {
         log.persistentModelID == logs.last?.persistentModelID
     }
 
@@ -228,11 +249,16 @@ struct CompletionBanner: View {
     let completion: ActiveWorkoutViewModel.Completion
     let onUndo: () -> Void
 
+    private var message: String {
+        if completion.isFinalExercise {
+            return "Workout complete — \(completion.repsSummary)"
+        }
+        return "\(completion.exerciseName) done — \(completion.repsSummary)"
+    }
+
     var body: some View {
         HStack {
-            Text(completion.isFinalExercise
-                 ? "Workout complete — \(completion.repsSummary)"
-                 : "\(completion.exerciseName) done — \(completion.repsSummary)")
+            Text(message)
                 .font(Theme.Font.title(15))
                 .foregroundStyle(Theme.accentText)
             Spacer()

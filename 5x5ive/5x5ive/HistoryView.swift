@@ -12,11 +12,11 @@ struct HistoryView: View {
     @State private var selectedExercise: Exercise?
     @State private var trendLogs: [ExerciseLog] = []
 
-    private var grouped: [(month: String, sessions: [WorkoutSession])] {
+    private var sessionsByMonth: [(month: String, sessions: [WorkoutSession])] {
         let formatter = DateFormatter()
         formatter.dateFormat = "MMMM"
-        let dict = Dictionary(grouping: sessions) { formatter.string(from: $0.startedAt) }
-        return dict
+        let groups = Dictionary(grouping: sessions) { formatter.string(from: $0.startedAt) }
+        return groups
             .sorted { ($0.value.first?.startedAt ?? .distantPast) > ($1.value.first?.startedAt ?? .distantPast) }
             .map { ($0.key, $0.value) }
     }
@@ -34,21 +34,8 @@ struct HistoryView: View {
                     .padding(.top, 22)
                     .padding(.horizontal, Theme.Space.screen)
 
-                ForEach(grouped, id: \.month) { group in
-                    VStack(alignment: .leading, spacing: 0) {
-                        MetaLabel(text: group.month).tracking(1.6)
-                            .padding(.bottom, 10)
-                        ForEach(group.sessions) { session in
-                            NavigationLink {
-                                SessionDetailView(session: session)
-                            } label: {
-                                SessionRow(session: session)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                    .padding(.top, 22)
-                    .padding(.horizontal, Theme.Space.screen)
+                ForEach(sessionsByMonth, id: \.month) { group in
+                    monthGroup(group)
                 }
             }
             .padding(.bottom, 24)
@@ -57,6 +44,23 @@ struct HistoryView: View {
         .toolbar(.hidden, for: .navigationBar)
         .task { await loadTrend() }
         .onChange(of: selectedExercise) { _, _ in Task { await loadTrend() } }
+    }
+
+    private func monthGroup(_ group: (month: String, sessions: [WorkoutSession])) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            MetaLabel(text: group.month).tracking(1.6)
+                .padding(.bottom, 10)
+            ForEach(group.sessions) { session in
+                NavigationLink {
+                    SessionDetailView(session: session)
+                } label: {
+                    SessionRow(session: session)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.top, 22)
+        .padding(.horizontal, Theme.Space.screen)
     }
 
     private var trendCard: some View {
@@ -75,29 +79,7 @@ struct HistoryView: View {
             )
             .frame(height: 76)
 
-            // Lift filter. Horizontal scroll keeps five lifts on one line at
-            // any Dynamic Type size.
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 7) {
-                    ForEach(exercises) { exercise in
-                        Button {
-                            selectedExercise = exercise
-                        } label: {
-                            Text(exercise.name.uppercased())
-                                .font(Theme.Font.label(10))
-                                .tracking(1)
-                                .foregroundStyle(exercise == selectedExercise ? Theme.textPrimary : Theme.textDim)
-                                .padding(.vertical, 6)
-                                .padding(.horizontal, 10)
-                                .background(
-                                    exercise == selectedExercise ? Theme.surfaceSunken : .clear,
-                                    in: RoundedRectangle(cornerRadius: Theme.Radius.chip, style: .continuous)
-                                )
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-            }
+            exerciseFilterStrip
         }
         .padding(18)
         .background(Theme.surface, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
@@ -107,12 +89,37 @@ struct HistoryView: View {
         )
     }
 
+    // Horizontal scroll keeps five lifts on one line at any Dynamic Type size.
+    private var exerciseFilterStrip: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 7) {
+                ForEach(exercises) { exercise in
+                    let isSelected = exercise == selectedExercise
+                    Button {
+                        selectedExercise = exercise
+                    } label: {
+                        Text(exercise.name.uppercased())
+                            .font(Theme.Font.label(10))
+                            .tracking(1)
+                            .foregroundStyle(isSelected ? Theme.textPrimary : Theme.textDim)
+                            .padding(.vertical, 6)
+                            .padding(.horizontal, 10)
+                            .background(
+                                isSelected ? Theme.surfaceSunken : .clear,
+                                in: RoundedRectangle(cornerRadius: Theme.Radius.chip, style: .continuous)
+                            )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+
     @MainActor
     private func loadTrend() async {
         if selectedExercise == nil { selectedExercise = exercises.first }
         guard let exercise = selectedExercise else { return }
-        let recent = (try? ProgressionCalculator.recentLogs(for: exercise, limit: 10, in: modelContext)) ?? []
-        trendLogs = recent
+        trendLogs = (try? ProgressionCalculator.recentLogs(for: exercise, limit: 10, in: modelContext)) ?? []
     }
 }
 
@@ -120,6 +127,12 @@ struct HistoryView: View {
 
 private struct SessionRow: View {
     let session: WorkoutSession
+
+    private var liftSummary: String {
+        session.sortedLogs
+            .map { "\($0.exercise?.name.uppercased() ?? "?") \($0.targetWeight.formatted())" }
+            .joined(separator: " · ")
+    }
 
     var body: some View {
         HStack {
@@ -131,9 +144,7 @@ private struct SessionRow: View {
                     MetaLabel(text: session.startedAt.formatted(.dateTime.month(.abbreviated).day()),
                               color: Theme.textDim)
                 }
-                Text(session.sortedLogs
-                    .map { "\($0.exercise?.name.uppercased() ?? "?") \($0.targetWeight.formatted())" }
-                    .joined(separator: " · "))
+                Text(liftSummary)
                     .font(Theme.Font.label())
                     .foregroundStyle(Theme.textDim)
                     .lineLimit(1)

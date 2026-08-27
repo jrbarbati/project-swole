@@ -8,16 +8,16 @@ struct RestBar: View {
     var body: some View {
         Group {
             if let rest {
-                active(rest)
+                countdown(for: rest)
             } else {
-                idle
+                idlePrompt
             }
         }
         .frame(height: 72)
         .animation(.snappy(duration: 0.2), value: rest == nil)
     }
 
-    private func active(_ rest: ActiveWorkoutViewModel.ActiveRest) -> some View {
+    private func countdown(for rest: ActiveWorkoutViewModel.ActiveRest) -> some View {
         TimelineView(.periodic(from: .now, by: 1)) { context in
             let remaining = rest.remaining(at: context.date)
             HStack(spacing: 16) {
@@ -28,27 +28,10 @@ struct RestBar: View {
 
                 VStack(alignment: .leading, spacing: 8) {
                     MetaLabel(text: rest.nextUpLabel)
-                    GeometryReader { geo in
-                        ZStack(alignment: .leading) {
-                            Capsule().fill(Theme.borderStrong)
-                            Capsule()
-                                .fill(Theme.accent)
-                                .frame(width: geo.size.width * rest.progress(at: context.date))
-                        }
-                    }
-                    .frame(height: 4)
+                    progressTrack(fraction: rest.progress(at: context.date))
                 }
 
-                Button(action: onSkip) {
-                    MetaLabel(text: "Skip")
-                        .padding(.vertical, 7)
-                        .padding(.horizontal, 10)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .stroke(Theme.borderStrong, lineWidth: 1)
-                        )
-                }
-                .buttonStyle(.plain)
+                skipButton
             }
             .padding(Theme.Space.cardPadding)
             .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous))
@@ -62,7 +45,32 @@ struct RestBar: View {
         }
     }
 
-    private var idle: some View {
+    private func progressTrack(fraction: Double) -> some View {
+        GeometryReader { geometry in
+            ZStack(alignment: .leading) {
+                Capsule().fill(Theme.borderStrong)
+                Capsule()
+                    .fill(Theme.accent)
+                    .frame(width: geometry.size.width * fraction)
+            }
+        }
+        .frame(height: 4)
+    }
+
+    private var skipButton: some View {
+        Button(action: onSkip) {
+            MetaLabel(text: "Skip")
+                .padding(.vertical, 7)
+                .padding(.horizontal, 10)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .stroke(Theme.borderStrong, lineWidth: 1)
+                )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var idlePrompt: some View {
         HStack {
             Text("Tap a set to log · hold to pick reps")
                 .font(Theme.Font.body(14))

@@ -7,9 +7,9 @@ public extension ProgressionCalculator {
     /// Chart-friendly order.
     static func recentLogs(for exercise: Exercise, limit: Int, in context: ModelContext) throws -> [ExerciseLog] {
         let exerciseID = exercise.persistentModelID
-        let all = try context.fetch(FetchDescriptor<ExerciseLog>())
-        
-        return all
+        let allLogs = try context.fetch(FetchDescriptor<ExerciseLog>())
+
+        return allLogs
             .filter { $0.exercise?.persistentModelID == exerciseID }
             .filter { $0.session?.finishedAt != nil }
             .sorted { ($0.session?.startedAt ?? .distantPast) < ($1.session?.startedAt ?? .distantPast) }
@@ -22,12 +22,12 @@ public extension ProgressionCalculator {
         guard let context = log.modelContext else {
             return nil
         }
-        
+
         let cutoff = log.session?.startedAt ?? .now
         let exerciseID = exercise.persistentModelID
-        let all = try context.fetch(FetchDescriptor<ExerciseLog>())
-        
-        return all
+        let allLogs = try context.fetch(FetchDescriptor<ExerciseLog>())
+
+        return allLogs
             .filter { $0.exercise?.persistentModelID == exerciseID }
             .filter { $0.session?.finishedAt != nil }
             .filter { ($0.session?.startedAt ?? .distantPast) < cutoff }
