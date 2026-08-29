@@ -226,7 +226,13 @@ struct ActiveWorkoutView: View {
     }
 
     private func finish() -> XPAward? {
-        try? WorkoutSessionService.finishWorkout(session, in: modelContext)
+        guard let award = try? WorkoutSessionService.finishWorkout(session, in: modelContext) else { return nil }
+        #if canImport(HealthKit) && os(iOS)
+        let start = session.startedAt
+        let end = session.finishedAt ?? .now
+        Task { await HealthKitManager.shared.saveWorkout(start: start, end: end) }
+        #endif
+        return award
     }
 
     private func cancel() {
