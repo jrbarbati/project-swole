@@ -127,6 +127,26 @@ public enum StatsCalculator {
         .sorted { $0.exercise.name < $1.exercise.name }
     }
 
+    /// The highest `targetWeight` among other finished, successful sessions
+    /// for this exercise — `nil` if there are none. Used to detect whether a
+    /// session in progress of being finished just set a new PR.
+    public static func priorSucceededMaxWeight(
+        for exercise: Exercise,
+        before session: WorkoutSession,
+        in context: ModelContext
+    ) throws -> Double? {
+        let exerciseID = exercise.persistentModelID
+        let sessionID = session.persistentModelID
+        let logs = try context.fetch(FetchDescriptor<ExerciseLog>())
+            .filter {
+                $0.exercise?.persistentModelID == exerciseID
+                    && $0.session?.persistentModelID != sessionID
+                    && $0.session?.finishedAt != nil
+                    && $0.succeeded
+            }
+        return logs.map(\.targetWeight).max()
+    }
+
     public static func trendLogs(
         for exercise: Exercise,
         range: StatsRange,

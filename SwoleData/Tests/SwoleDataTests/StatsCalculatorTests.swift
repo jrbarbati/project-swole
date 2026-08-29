@@ -297,6 +297,74 @@ private func insertFinishedSession(
     #expect(records.first?.isWithinRange == false)
 }
 
+// MARK: - priorSucceededMaxWeight
+
+@Test func priorSucceededMaxWeightReturnsNilWithNoPriorFinishedSessions() throws {
+    let context = try makeInMemoryContext()
+    let squat = Exercise(name: "Squat", defaultSetCount: 5, defaultRepsPerSet: 5)
+    context.insert(squat)
+    let session = WorkoutSession(startedAt: .now, workoutType: .a, finishedAt: .now)
+    context.insert(session)
+    try context.save()
+
+    let result = try StatsCalculator.priorSucceededMaxWeight(for: squat, before: session, in: context)
+
+    #expect(result == nil)
+}
+
+@Test func priorSucceededMaxWeightReturnsTheHighestPriorSuccessfulWeight() throws {
+    let context = try makeInMemoryContext()
+    let now = Date()
+    let squat = Exercise(name: "Squat", defaultSetCount: 5, defaultRepsPerSet: 5)
+    context.insert(squat)
+
+    let earlier = Calendar.current.date(byAdding: .day, value: -10, to: now)!
+    insertFinishedSession(exercise: squat, weight: 135, reps: 5, sets: 5, startedAt: earlier, context: context)
+    insertFinishedSession(exercise: squat, weight: 185, reps: 5, sets: 5, startedAt: earlier.addingTimeInterval(3600), context: context)
+
+    let currentSession = WorkoutSession(startedAt: now, workoutType: .a, finishedAt: now)
+    context.insert(currentSession)
+    try context.save()
+
+    let result = try StatsCalculator.priorSucceededMaxWeight(for: squat, before: currentSession, in: context)
+
+    #expect(result == 185)
+}
+
+@Test func priorSucceededMaxWeightIgnoresFailedSetsAndExcludesTheGivenSession() throws {
+    let context = try makeInMemoryContext()
+    let now = Date()
+    let squat = Exercise(name: "Squat", defaultSetCount: 5, defaultRepsPerSet: 5)
+    context.insert(squat)
+
+    let earlier = Calendar.current.date(byAdding: .day, value: -10, to: now)!
+    insertFinishedSession(exercise: squat, weight: 135, reps: 5, sets: 5, startedAt: earlier, context: context)
+
+    // A failed heavier attempt in a separate finished session shouldn't count.
+    let failedStart = earlier.addingTimeInterval(3600)
+    let failedSession = WorkoutSession(startedAt: failedStart, workoutType: .a, finishedAt: failedStart.addingTimeInterval(2400))
+    context.insert(failedSession)
+    let failedLog = ExerciseLog(session: failedSession, exercise: squat, targetWeight: 225, targetReps: 5)
+    context.insert(failedLog)
+    for n in 1...5 {
+        context.insert(SetLog(exerciseLog: failedLog, setNumber: n, repsCompleted: n == 5 ? 3 : 5))
+    }
+
+    // The session being checked "before" also has its own squat log — must be excluded from the result.
+    let currentSession = WorkoutSession(startedAt: now, workoutType: .a, finishedAt: now)
+    context.insert(currentSession)
+    let currentLog = ExerciseLog(session: currentSession, exercise: squat, targetWeight: 300, targetReps: 5)
+    context.insert(currentLog)
+    for n in 1...5 {
+        context.insert(SetLog(exerciseLog: currentLog, setNumber: n, repsCompleted: 5))
+    }
+    try context.save()
+
+    let result = try StatsCalculator.priorSucceededMaxWeight(for: squat, before: currentSession, in: context)
+
+    #expect(result == 135)
+}
+
 // MARK: - trendLogs
 
 @Test func trendLogsReturnsOnlyLogsWithinRangeOldestFirst() throws {
