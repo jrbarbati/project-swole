@@ -9,13 +9,14 @@ struct RootView: View {
 
     @State private var selectedTab: Tab = .today
 
-    enum Tab: Hashable { case today, history, settings }
+    enum Tab: Hashable { case today, history, stats, settings }
 
     var body: some View {
         VStack(spacing: 0) {
             ZStack {
                 tabContent(.today) { NavigationStack { TodayView() } }
                 tabContent(.history) { NavigationStack { HistoryView() } }
+                tabContent(.stats) { NavigationStack { StatsView() } }
                 tabContent(.settings) { NavigationStack { SettingsView() } }
             }
 
@@ -45,7 +46,7 @@ struct CustomTabBar: View {
     @Binding var selection: RootView.Tab
 
     private let items: [(tab: RootView.Tab, title: String)] = [
-        (.today, "Today"), (.history, "History"), (.settings, "Settings"),
+        (.today, "Today"), (.history, "History"), (.stats, "Stats"), (.settings, "Settings"),
     ]
 
     var body: some View {

@@ -11,6 +11,7 @@ struct HistoryView: View {
 
     @State private var selectedExercise: Exercise?
     @State private var trendLogs: [ExerciseLog] = []
+    @State private var personalRecordDates: [PersistentIdentifier: Date] = [:]
 
     private var sessionsByMonth: [(month: String, sessions: [WorkoutSession])] {
         let formatter = DateFormatter()
@@ -42,7 +43,10 @@ struct HistoryView: View {
         }
         .background(Theme.canvas)
         .toolbar(.hidden, for: .navigationBar)
-        .task { await loadTrend() }
+        .task {
+            await loadTrend()
+            loadPersonalRecordDates()
+        }
         .onChange(of: selectedExercise) { _, _ in Task { await loadTrend() } }
     }
 
@@ -54,7 +58,7 @@ struct HistoryView: View {
                 NavigationLink {
                     SessionDetailView(session: session)
                 } label: {
-                    SessionRow(session: session)
+                    SessionRow(session: session, isPersonalRecord: isPersonalRecord(session))
                 }
                 .buttonStyle(.plain)
             }
@@ -115,11 +119,24 @@ struct HistoryView: View {
         }
     }
 
+    private func isPersonalRecord(_ session: WorkoutSession) -> Bool {
+        session.sortedLogs.contains { log in
+            guard let exercise = log.exercise else { return false }
+            return personalRecordDates[exercise.persistentModelID] == session.startedAt
+        }
+    }
+
     @MainActor
     private func loadTrend() async {
         if selectedExercise == nil { selectedExercise = exercises.first }
         guard let exercise = selectedExercise else { return }
         trendLogs = (try? ProgressionCalculator.recentLogs(for: exercise, limit: 10, in: modelContext)) ?? []
+    }
+
+    @MainActor
+    private func loadPersonalRecordDates() {
+        let records = (try? StatsCalculator.personalRecords(range: .all, in: modelContext)) ?? []
+        personalRecordDates = Dictionary(uniqueKeysWithValues: records.map { ($0.exercise.persistentModelID, $0.achievedAt) })
     }
 }
 
@@ -127,6 +144,7 @@ struct HistoryView: View {
 
 private struct SessionRow: View {
     let session: WorkoutSession
+    let isPersonalRecord: Bool
 
     private var liftSummary: String {
         session.sortedLogs
@@ -143,6 +161,11 @@ private struct SessionRow: View {
                         .foregroundStyle(Theme.textPrimary)
                     MetaLabel(text: session.startedAt.formatted(.dateTime.month(.abbreviated).day()),
                               color: Theme.textDim)
+                    if isPersonalRecord {
+                        Image(systemName: "star.fill")
+                            .font(.system(size: 10))
+                            .foregroundStyle(Theme.accentText)
+                    }
                 }
                 Text(liftSummary)
                     .font(Theme.Font.label())

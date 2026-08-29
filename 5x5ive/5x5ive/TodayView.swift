@@ -34,7 +34,7 @@ struct TodayView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             header
-            StreakStrip(sessions: finishedSessions)
+            WeekStrip(sessions: finishedSessions)
                 .padding(.top, 22)
                 .padding(.horizontal, Theme.Space.screen)
 
@@ -266,21 +266,29 @@ private struct NextLiftRow: View {
     }
 }
 
-// MARK: - Streak strip
+// MARK: - Week strip
 
-/// Seven blocks, one per day. Filled = a session was finished that day.
-/// The trailing dashed block is today when nothing is logged yet.
-private struct StreakStrip: View {
+/// Calendar week, Sunday through Saturday. Filled = a session was finished that day.
+/// Today's block always carries a highlighted border; any untrained day with a
+/// workout logged before it says REST, whether that day is past or future.
+private struct WeekStrip: View {
     let sessions: [WorkoutSession]
 
-    private var days: [(date: Date, trained: Bool, isToday: Bool)] {
+    private var days: [(date: Date, trained: Bool, isToday: Bool, hasPriorWorkout: Bool)] {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: .now)
-        return (0..<7).reversed().map { offset in
-            let day = calendar.date(byAdding: .day, value: -offset, to: today)!
+        let weekday = calendar.component(.weekday, from: today) // 1 = Sunday
+        let sunday = calendar.date(byAdding: .day, value: -(weekday - 1), to: today)!
+        return (0..<7).map { offset in
+            let day = calendar.date(byAdding: .day, value: offset, to: sunday)!
             let trained = sessions.contains { calendar.isDate($0.startedAt, inSameDayAs: day) }
-            return (day, trained, offset == 0)
+            let hasPriorWorkout = sessions.contains { $0.startedAt < day }
+            return (day, trained, calendar.isDate(day, inSameDayAs: today), hasPriorWorkout)
         }
+    }
+
+    private var weekdaySymbols: [String] {
+        Calendar.current.veryShortWeekdaySymbols
     }
 
     private var weekStreak: Int {
@@ -298,20 +306,35 @@ private struct StreakStrip: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 9) {
             HStack(spacing: 5) {
-                ForEach(days, id: \.date) { day in
-                    RoundedRectangle(cornerRadius: Theme.Radius.chip, style: .continuous)
-                        .fill(day.trained ? Theme.accent.opacity(0.22) : Theme.surfaceSunken)
-                        .frame(height: 34)
-                        .overlay {
-                            if day.isToday && !day.trained {
-                                RoundedRectangle(cornerRadius: Theme.Radius.chip, style: .continuous)
-                                    .strokeBorder(Theme.borderFocus, style: StrokeStyle(lineWidth: 1.5, dash: [3, 3]))
+                ForEach(Array(days.enumerated()), id: \.1.date) { index, day in
+                    VStack(spacing: 4) {
+                        Text(weekdaySymbols[index])
+                            .font(Theme.Font.label(9))
+                            .foregroundStyle(Theme.textDim)
+                        RoundedRectangle(cornerRadius: Theme.Radius.chip, style: .continuous)
+                            .fill(day.trained ? Theme.accent.opacity(0.22) : Theme.surfaceSunken)
+                            .frame(height: 34)
+                            .overlay {
+                                if day.isToday {
+                                    RoundedRectangle(cornerRadius: Theme.Radius.chip, style: .continuous)
+                                        .strokeBorder(
+                                            Theme.borderFocus,
+                                            style: day.trained
+                                                ? StrokeStyle(lineWidth: 1.5)
+                                                : StrokeStyle(lineWidth: 1.5, dash: [3, 3])
+                                        )
+                                } else if !day.trained && day.hasPriorWorkout {
+                                    Text("REST")
+                                        .font(Theme.Font.label(9))
+                                        .tracking(1.0)
+                                        .foregroundStyle(Theme.textMuted)
+                                }
                             }
-                        }
+                    }
                 }
             }
             HStack {
-                MetaLabel(text: "Last 7 days", color: Theme.textDim).tracking(1.2)
+                MetaLabel(text: "This week", color: Theme.textDim).tracking(1.2)
                 Spacer()
                 MetaLabel(text: "\(weekStreak) week streak").tracking(1.2)
             }
