@@ -33,4 +33,11 @@ public extension ProgressionCalculator {
             .filter { ($0.session?.startedAt ?? .distantPast) < cutoff }
             .max { ($0.session?.startedAt ?? .distantPast) < ($1.session?.startedAt ?? .distantPast) }
     }
+
+    /// The `targetWeight` of the most recent *finished* session for this
+    /// exercise, or `nil` if it's never been logged. Used as the baseline
+    /// a live weight-adjustment delta is measured against.
+    static func lastCompletedWeight(for exercise: Exercise, in context: ModelContext) throws -> Double? {
+        try recentLogs(for: exercise, limit: 1, in: context).last?.targetWeight
+    }
 }

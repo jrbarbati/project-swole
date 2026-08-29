@@ -124,3 +124,46 @@ private func makeFinishedSession(for exercise: Exercise, on date: Date, targetWe
 
     #expect(previous?.persistentModelID == finished.persistentModelID)
 }
+
+@Test func lastCompletedWeightIsNilWithNoFinishedHistory() throws {
+    let context = try makeInMemoryContext()
+    let squat = Exercise(name: "Squat", defaultSetCount: 5, defaultRepsPerSet: 5)
+    context.insert(squat)
+    try context.save()
+
+    let weight = try ProgressionCalculator.lastCompletedWeight(for: squat, in: context)
+    #expect(weight == nil)
+}
+
+@Test func lastCompletedWeightReturnsTheMostRecentFinishedLogsWeight() throws {
+    let context = try makeInMemoryContext()
+    let squat = Exercise(name: "Squat", defaultSetCount: 5, defaultRepsPerSet: 5)
+    context.insert(squat)
+
+    let calendar = Calendar.current
+    let day0 = Date()
+    let day1 = calendar.date(byAdding: .day, value: 1, to: day0)!
+
+    _ = makeFinishedSession(for: squat, on: day0, targetWeight: 135, in: context)
+    _ = makeFinishedSession(for: squat, on: day1, targetWeight: 140, in: context)
+    try context.save()
+
+    let weight = try ProgressionCalculator.lastCompletedWeight(for: squat, in: context)
+    #expect(weight == 140)
+}
+
+@Test func lastCompletedWeightIgnoresInProgressSessions() throws {
+    let context = try makeInMemoryContext()
+    let squat = Exercise(name: "Squat", defaultSetCount: 5, defaultRepsPerSet: 5)
+    context.insert(squat)
+
+    _ = makeFinishedSession(for: squat, on: Date(), targetWeight: 135, in: context)
+
+    let inProgress = WorkoutSession(startedAt: Date(), workoutType: .a)
+    context.insert(inProgress)
+    context.insert(ExerciseLog(session: inProgress, exercise: squat, targetWeight: 999, targetReps: 5))
+    try context.save()
+
+    let weight = try ProgressionCalculator.lastCompletedWeight(for: squat, in: context)
+    #expect(weight == 135)
+}
