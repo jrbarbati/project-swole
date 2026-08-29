@@ -12,14 +12,13 @@ struct ExerciseCard: View {
     let onExpand: () -> Void
     let onShowDetail: () -> Void
 
-    /// Previous session's numbers for this lift, shown under the tiles.
     @State private var lastSessionSummary: String?
 
     private var isComplete: Bool { !log.hasUnloggedSets }
 
     private var plates: PlateMath {
         PlateCalculator.plates(
-            for: log.targetWeight,
+            for: unit.fromLb(log.targetWeight),
             barWeight: PlateCalculator.barWeight(for: unit),
             available: PlateCalculator.plateSet(for: unit)
         )
@@ -82,7 +81,7 @@ struct ExerciseCard: View {
 
     private var weightReadout: some View {
         HStack(alignment: .firstTextBaseline, spacing: 3) {
-            Text(log.targetWeight.formatted(.number.precision(.fractionLength(0...1))))
+            Text(unit.fromLb(log.targetWeight).formattedWeight)
                 .font(Theme.Font.numeric(16))
                 .foregroundStyle(Theme.textPrimary)
             Text(unit.rawValue.uppercased())
@@ -153,12 +152,12 @@ struct ExerciseCard: View {
     @ViewBuilder
     private var collapsedReadout: some View {
         if isComplete {
-            Text("\(log.targetWeight.formatted()) · \(log.repsSummary)")
+            Text("\(unit.fromLb(log.targetWeight).formattedWeight) · \(log.repsSummary)")
                 .font(Theme.Font.numeric(13))
                 .foregroundStyle(Theme.textDim)
         } else {
             HStack(alignment: .firstTextBaseline, spacing: 3) {
-                Text(log.targetWeight.formatted(.number.precision(.fractionLength(0...1))))
+                Text(unit.fromLb(log.targetWeight).formattedWeight)
                     .font(Theme.Font.numeric(16))
                 Text(unit.rawValue.uppercased())
                     .font(Theme.Font.label(11))
@@ -175,7 +174,7 @@ struct ExerciseCard: View {
         guard lastSessionSummary == nil, let exercise = log.exercise else { return }
         let previous = try? ProgressionCalculator.previousLog(for: exercise, before: log)
         if let previous {
-            lastSessionSummary = "Last \(previous.targetWeight.formatted()) · \(previous.repsSummary)"
+            lastSessionSummary = "Last \(unit.fromLb(previous.targetWeight).formattedWeight) · \(previous.repsSummary)"
         } else {
             lastSessionSummary = "First time at this lift"
         }

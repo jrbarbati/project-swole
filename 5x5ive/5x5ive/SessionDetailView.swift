@@ -43,7 +43,7 @@ struct SessionDetailView: View {
             }
             HStack(spacing: 18) {
                 MetaLabel(text: durationText)
-                MetaLabel(text: "\(session.volume.formatted(.number.precision(.fractionLength(0)))) \(unit.rawValue)")
+                MetaLabel(text: "\(unit.fromLb(session.volume).formatted(.number.precision(.fractionLength(0)))) \(unit.rawValue)")
                 MetaLabel(text: "\(session.loggedSetCount)/\(session.totalSetCount) sets")
             }
         }
@@ -119,10 +119,11 @@ struct SessionDetailView: View {
         }
 
         let remaining = config.deloadThreshold - streak
+        let displayWeight = unit.fromLb(log.targetWeight).formattedWeight
         if remaining <= 0 {
-            return "\(ordinal) miss at \(log.targetWeight.formatted()) · deload applied"
+            return "\(ordinal) miss at \(displayWeight) · deload applied"
         }
-        return "\(ordinal) miss at \(log.targetWeight.formatted()) · \(remaining) more triggers deload"
+        return "\(ordinal) miss at \(displayWeight) · \(remaining) more triggers deload"
     }
 }
 
@@ -140,7 +141,7 @@ private struct LoggedExerciseCard: View {
                     .font(Theme.Font.title(18))
                     .foregroundStyle(Theme.textPrimary)
                 Spacer()
-                Text("\(log.targetWeight.formatted()) \(unit.rawValue.uppercased())")
+                Text("\(unit.fromLb(log.targetWeight).formattedWeight) \(unit.rawValue.uppercased())")
                     .font(Theme.Font.numeric(14))
                     .foregroundStyle(Theme.textMuted)
             }

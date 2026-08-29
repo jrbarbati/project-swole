@@ -67,13 +67,14 @@ struct TodayView: View {
         VStack(spacing: Theme.Space.cardGap) {
             ForEach(nextEntries) { entry in
                 if let exercise = entry.exercise, let config = config(for: exercise) {
+                    let unit = settings?.unit ?? .lb
                     let weight = displayWeight(for: exercise, config: config)
                     NextLiftRow(
                         exercise: exercise,
                         config: config,
-                        unit: settings?.unit ?? .lb,
-                        targetWeight: weight,
-                        delta: weight - baselineWeight(for: exercise, config: config),
+                        unit: unit,
+                        targetWeight: unit.fromLb(weight),
+                        delta: unit.fromLb(weight - baselineWeight(for: exercise, config: config)),
                         onDecrement: { adjustWeight(for: exercise, config: config, by: -config.weightIncrement) },
                         onIncrement: { adjustWeight(for: exercise, config: config, by: config.weightIncrement) }
                     )
@@ -142,8 +143,9 @@ struct TodayView: View {
             let streak = failStreak(for: exercise)
             guard streak > 0 else { continue }
             let weight = targetWeight(for: exercise, config: config)
+            let unit = settings?.unit ?? .lb
             let shortName = exercise.name.split(separator: " ").last.map(String.init) ?? exercise.name
-            return "\(shortName) held — \(streak) miss\(streak == 1 ? "" : "es") at \(weight.formatted())"
+            return "\(shortName) held — \(streak) miss\(streak == 1 ? "" : "es") at \(unit.fromLb(weight).formattedWeight)"
         }
         return nil
     }
@@ -223,9 +225,9 @@ private struct NextLiftRow: View {
             return ("HOLD", Theme.textMuted)
         }
         if delta > 0 {
-            return ("+\(delta.formatted(.number.precision(.fractionLength(0...1))))", Theme.accentText)
+            return ("+\(delta.formattedWeight)", Theme.accentText)
         }
-        return ("−\(abs(delta).formatted(.number.precision(.fractionLength(0...1))))", Theme.warn)
+        return ("−\(abs(delta).formattedWeight)", Theme.warn)
     }
 
     var body: some View {
@@ -245,7 +247,7 @@ private struct NextLiftRow: View {
                 StepButton(symbol: "−", action: onDecrement)
                     .accessibilityIdentifier("weightDecrement-\(exercise.name)")
                 VStack(alignment: .trailing, spacing: 3) {
-                    Text(targetWeight.formatted(.number.precision(.fractionLength(0...1))))
+                    Text(targetWeight.formattedWeight)
                         .font(Theme.Font.numeric(24))
                         .foregroundStyle(Theme.textPrimary)
                     Text(deltaLabel.text)

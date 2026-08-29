@@ -22,6 +22,16 @@ extension Color {
     }
 }
 
+// MARK: - Weight formatting
+
+extension Double {
+    /// Weights are shown to the tenths place regardless of unit — lb-to-kg
+    /// conversion produces long decimals that would otherwise leak through.
+    var formattedWeight: String {
+        formatted(.number.precision(.fractionLength(0...1)))
+    }
+}
+
 // MARK: - Tokens
 
 enum Theme {

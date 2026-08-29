@@ -98,7 +98,7 @@ struct StatsView: View {
                 Spacer()
                 if let totals {
                     MetaLabel(
-                        text: "\(totals.totalVolume.formatted(.number.precision(.fractionLength(0)))) \(unit.rawValue)",
+                        text: "\(unit.fromLb(totals.totalVolume).formatted(.number.precision(.fractionLength(0)))) \(unit.rawValue)",
                         color: Theme.accentText
                     )
                 }
@@ -110,7 +110,7 @@ struct StatsView: View {
             HStack {
                 MetaLabel(text: "avg / workout", color: Theme.textDim)
                 Spacer()
-                MetaLabel(text: "\(averageVolumePerWorkout.formatted(.number.precision(.fractionLength(0)))) \(unit.rawValue)", color: Theme.textDim)
+                MetaLabel(text: "\(unit.fromLb(averageVolumePerWorkout).formatted(.number.precision(.fractionLength(0)))) \(unit.rawValue)", color: Theme.textDim)
             }
         }
     }
@@ -121,7 +121,7 @@ struct StatsView: View {
                 MetaLabel(text: "\(selectedExercise?.name ?? "—") · working weight").tracking(1.6)
                 Spacer()
                 if let latest = trendLogs.last?.targetWeight {
-                    MetaLabel(text: "\(latest.formatted()) \(unit.rawValue)", color: Theme.accentText)
+                    MetaLabel(text: "\(unit.fromLb(latest).formattedWeight) \(unit.rawValue)", color: Theme.accentText)
                 }
             }
 
@@ -129,7 +129,7 @@ struct StatsView: View {
                 MetaLabel(text: "no sessions in range", color: Theme.textFaint)
                     .frame(height: 76)
             } else {
-                WeightTrendChart(logs: trendLogs.dropLast(), currentWeight: trendLogs.last?.targetWeight ?? 0)
+                WeightTrendChart(logs: trendLogs.dropLast(), currentWeight: trendLogs.last?.targetWeight ?? 0, unit: unit)
                     .frame(height: 76)
             }
 
@@ -160,7 +160,7 @@ struct StatsView: View {
 
             Spacer()
 
-            Text("\(record.weight.formatted()) \(unit.rawValue) × \(record.reps)")
+            Text("\(unit.fromLb(record.weight).formattedWeight) \(unit.rawValue) × \(record.reps)")
                 .font(Theme.Font.numeric(14))
                 .foregroundStyle(Theme.textMuted)
         }

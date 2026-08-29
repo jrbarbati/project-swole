@@ -16,9 +16,9 @@ struct ExerciseDetailSheet: View {
 
     private var warmups: [WarmupSet] {
         WarmupPlanner.plan(
-            workingWeight: log.targetWeight,
+            workingWeight: unit.fromLb(log.targetWeight),
             barWeight: PlateCalculator.barWeight(for: unit),
-            increment: config?.weightIncrement ?? 5
+            increment: unit.fromLb(config?.weightIncrement ?? 5)
         )
     }
 
@@ -67,7 +67,7 @@ struct ExerciseDetailSheet: View {
                 try? modelContext.save()
             }
             HStack(alignment: .firstTextBaseline, spacing: 3) {
-                Text(log.targetWeight.formatted(.number.precision(.fractionLength(0...1))))
+                Text(unit.fromLb(log.targetWeight).formattedWeight)
                     .font(Theme.Font.numeric(15))
                     .foregroundStyle(Theme.textMuted)
                 Text(unit.rawValue.uppercased())
@@ -97,7 +97,7 @@ struct ExerciseDetailSheet: View {
             toggleWarmup(warmup.id)
         } label: {
             HStack {
-                Text("\(warmup.weight.formatted()) \(unit.rawValue.uppercased()) × \(warmup.reps)")
+                Text("\(warmup.weight.formattedWeight) \(unit.rawValue.uppercased()) × \(warmup.reps)")
                     .font(Theme.Font.numeric(14))
                     .foregroundStyle(Theme.textSecondary)
                 Spacer()
@@ -122,7 +122,7 @@ struct ExerciseDetailSheet: View {
 
     private var trendSection: some View {
         section("Last \(history.count) sessions", trailing: trendLabel) {
-            WeightTrendChart(logs: history, currentWeight: log.targetWeight)
+            WeightTrendChart(logs: history, currentWeight: log.targetWeight, unit: unit)
                 .frame(height: 104)
         }
     }
@@ -160,7 +160,8 @@ struct ExerciseDetailSheet: View {
         guard let earliest = history.first?.targetWeight else { return nil }
         let delta = log.targetWeight - earliest
         guard delta != 0 else { return nil }
-        return "\(delta > 0 ? "+" : "")\(delta.formatted()) \(unit.rawValue.uppercased())"
+        let displayDelta = unit.fromLb(delta)
+        return "\(displayDelta > 0 ? "+" : "")\(displayDelta.formattedWeight) \(unit.rawValue.uppercased())"
     }
 
     @ViewBuilder
@@ -214,6 +215,7 @@ struct ExerciseDetailSheet: View {
 struct WeightTrendChart: View {
     let logs: [ExerciseLog]
     let currentWeight: Double
+    let unit: MeasurementUnit
 
     private struct Point: Identifiable {
         let id: Int
@@ -243,9 +245,9 @@ struct WeightTrendChart: View {
             .chartYScale(domain: .automatic(includesZero: false))
 
             HStack {
-                MetaLabel(text: (logs.first?.targetWeight ?? currentWeight).formatted(), color: Theme.textDim)
+                MetaLabel(text: unit.fromLb(logs.first?.targetWeight ?? currentWeight).formattedWeight, color: Theme.textDim)
                 Spacer()
-                MetaLabel(text: "\(currentWeight.formatted()) today", color: Theme.textDim)
+                MetaLabel(text: "\(unit.fromLb(currentWeight).formattedWeight) today", color: Theme.textDim)
             }
         }
     }

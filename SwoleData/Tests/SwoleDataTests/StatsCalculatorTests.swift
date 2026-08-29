@@ -46,7 +46,7 @@ private func insertFinishedSession(
     let squat = Exercise(name: "Squat", defaultSetCount: 5, defaultRepsPerSet: 5)
     context.insert(squat)
 
-    // 2 days ago: finished, 300 min later, 5 sets x 5 reps x 100 lb = 2500 volume.
+    // 2 days ago: finished 40 min later, 5 sets x 5 reps x 100 lb = 2500 volume.
     let started = Calendar.current.date(byAdding: .day, value: -2, to: now)!
     let finished = Calendar.current.date(byAdding: .minute, value: 40, to: started)!
     let session = WorkoutSession(startedAt: started, workoutType: .a, finishedAt: finished)

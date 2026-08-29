@@ -243,7 +243,7 @@ struct ElapsedLabel: View {
     }
 }
 
-// MARK: - Completion banner (replaces TransitionPromptView)
+// MARK: - Completion banner
 
 struct CompletionBanner: View {
     let completion: ActiveWorkoutViewModel.Completion

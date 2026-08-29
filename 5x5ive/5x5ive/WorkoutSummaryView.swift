@@ -52,7 +52,7 @@ struct WorkoutSummaryView: View {
     private var statCards: some View {
         HStack(spacing: 10) {
             StatCard(label: "Duration", value: durationText)
-            StatCard(label: "Volume", value: session.volume.formatted(.number.precision(.fractionLength(0))))
+            StatCard(label: "Volume", value: unit.fromLb(session.volume).formatted(.number.precision(.fractionLength(0))))
         }
     }
 
@@ -115,7 +115,7 @@ struct WorkoutSummaryView: View {
             let next = log.targetWeight + config.weightIncrement
             return SummaryOutcome(
                 headline: "Clear",
-                detail: "Next \(next.formatted())",
+                detail: "Next \(unit.fromLb(next).formattedWeight)",
                 color: Theme.accentText
             )
         }
@@ -130,14 +130,14 @@ struct WorkoutSummaryView: View {
                 .rounded(.down) * config.weightIncrement
             return SummaryOutcome(
                 headline: "\(streak)\(ordinalSuffix(streak)) miss",
-                detail: "Deload \(deloaded.formatted())",
+                detail: "Deload \(unit.fromLb(deloaded).formattedWeight)",
                 color: Theme.warn
             )
         }
 
         return SummaryOutcome(
             headline: "Miss",
-            detail: "Hold \(log.targetWeight.formatted())",
+            detail: "Hold \(unit.fromLb(log.targetWeight).formattedWeight)",
             color: Theme.miss
         )
     }
@@ -190,7 +190,7 @@ private struct SummaryRow: View {
                 Text(log.exercise?.name ?? "")
                     .font(Theme.Font.title(17))
                     .foregroundStyle(Theme.textPrimary)
-                Text("\(log.targetWeight.formatted()) · \(log.repsSummary)")
+                Text("\(unit.fromLb(log.targetWeight).formattedWeight) · \(log.repsSummary)")
                     .font(Theme.Font.numeric(12))
                     .foregroundStyle(Theme.textDim)
             }

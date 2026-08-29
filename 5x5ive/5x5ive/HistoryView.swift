@@ -8,10 +8,13 @@ struct HistoryView: View {
            sort: \WorkoutSession.startedAt, order: .reverse)
     private var sessions: [WorkoutSession]
     @Query(sort: \Exercise.name) private var exercises: [Exercise]
+    @Query private var settingsList: [UserSettings]
 
     @State private var selectedExercise: Exercise?
     @State private var trendLogs: [ExerciseLog] = []
     @State private var personalRecordDates: [PersistentIdentifier: Date] = [:]
+
+    private var unit: MeasurementUnit { settingsList.first?.unit ?? .lb }
 
     private var sessionsByMonth: [(month: String, sessions: [WorkoutSession])] {
         let formatter = DateFormatter()
@@ -58,7 +61,7 @@ struct HistoryView: View {
                 NavigationLink {
                     SessionDetailView(session: session)
                 } label: {
-                    SessionRow(session: session, isPersonalRecord: isPersonalRecord(session))
+                    SessionRow(session: session, isPersonalRecord: isPersonalRecord(session), unit: unit)
                 }
                 .buttonStyle(.plain)
             }
@@ -73,13 +76,14 @@ struct HistoryView: View {
                 MetaLabel(text: "\(selectedExercise?.name ?? "—") · working weight")
                 Spacer()
                 if let latest = trendLogs.last?.targetWeight {
-                    MetaLabel(text: "\(latest.formatted()) lb", color: Theme.accentText)
+                    MetaLabel(text: "\(unit.fromLb(latest).formattedWeight) \(unit.rawValue)", color: Theme.accentText)
                 }
             }
 
             WeightTrendChart(
                 logs: trendLogs.dropLast(),
-                currentWeight: trendLogs.last?.targetWeight ?? 0
+                currentWeight: trendLogs.last?.targetWeight ?? 0,
+                unit: unit
             )
             .frame(height: 76)
 
@@ -145,10 +149,11 @@ struct HistoryView: View {
 private struct SessionRow: View {
     let session: WorkoutSession
     let isPersonalRecord: Bool
+    let unit: MeasurementUnit
 
     private var liftSummary: String {
         session.sortedLogs
-            .map { "\($0.exercise?.name.uppercased() ?? "?") \($0.targetWeight.formatted())" }
+            .map { "\($0.exercise?.name.uppercased() ?? "?") \(unit.fromLb($0.targetWeight).formattedWeight)" }
             .joined(separator: " · ")
     }
 

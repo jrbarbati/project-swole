@@ -189,7 +189,7 @@ private struct WeightRow: View {
                 Text(config.exercise?.name ?? "")
                     .font(Theme.Font.title(16))
                     .foregroundStyle(Theme.textPrimary)
-                MetaLabel(text: "+\(config.weightIncrement.formatted()) \(unit.rawValue) per session",
+                MetaLabel(text: "+\(unit.fromLb(config.weightIncrement).formattedWeight) \(unit.rawValue) per session",
                           color: Theme.textDim)
                     .tracking(1.2)
             }
@@ -199,10 +199,10 @@ private struct WeightRow: View {
                     config.weightOverride = max(0, currentWeight - config.weightIncrement)
                     onChange()
                 }
-                Text(currentWeight.formatted(.number.precision(.fractionLength(0...1))))
+                Text(unit.fromLb(currentWeight).formattedWeight)
                     .font(Theme.Font.numeric(19))
                     .foregroundStyle(Theme.textPrimary)
-                    .frame(width: 44)
+                    .frame(width: 64)
                 StepButton(symbol: "+") {
                     config.weightOverride = currentWeight + config.weightIncrement
                     onChange()
@@ -291,7 +291,7 @@ private struct SettingRow<Accessory: View>: View {
     }
 }
 
-/// Two-up pill switch, matching the mock rather than the stock segmented control.
+/// Custom two-up pill switch, used instead of the stock segmented control.
 private struct SegmentedPair: View {
     let options: [String]
     let selection: String

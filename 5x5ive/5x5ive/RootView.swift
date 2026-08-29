@@ -40,7 +40,7 @@ struct RootView: View {
     }
 }
 
-// MARK: - Custom tab bar (matches mock 01/08/10)
+// MARK: - Custom tab bar
 
 struct CustomTabBar: View {
     @Binding var selection: RootView.Tab

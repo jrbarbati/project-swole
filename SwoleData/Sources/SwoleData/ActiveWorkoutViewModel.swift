@@ -50,7 +50,7 @@ public final class ActiveWorkoutViewModel {
 
     public private(set) var activeRest: ActiveRest?
     public private(set) var completion: Completion?
-    /// Which exercise card is expanded. Set on appear, then moved by auto-advance.
+    /// Set on appear, then moved by auto-advance.
     public var expandedLogID: PersistentIdentifier?
 
     private(set) var settleFireCount = 0
@@ -211,7 +211,6 @@ public extension ExerciseLog {
 
     var loggedSetCount: Int { sets.filter { $0.repsCompleted != nil }.count }
 
-    /// Total weight moved, used by the summary screen.
     var volume: Double {
         sortedSets.reduce(0) { $0 + Double($1.repsCompleted ?? 0) * targetWeight }
     }

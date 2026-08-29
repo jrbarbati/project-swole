@@ -8,7 +8,6 @@ public final class ExerciseLog {
     public var targetWeight: Double
     public var targetReps: Int
     public var order: Int = 0
-    /// Per-exercise note, captured in the exercise sheet.
     public var note: String?
     /// IDs of `WarmupSet`s checked off in the exercise sheet, so warmup
     /// progress survives an app relaunch mid-workout.
