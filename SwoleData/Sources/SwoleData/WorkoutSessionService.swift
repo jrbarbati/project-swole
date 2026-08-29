@@ -89,7 +89,45 @@ public enum WorkoutSessionService {
         let allSettings = try context.fetch(FetchDescriptor<UserSettings>())
         allSettings.first?.lastCompletedWorkoutType = session.workoutType
 
+        try awardXP(for: session, in: context)
+
         try context.save()
+    }
+
+    private static func awardXP(for session: WorkoutSession, in context: ModelContext) throws {
+        guard let state = try context.fetch(FetchDescriptor<GamificationState>()).first else { return }
+
+        var xp = XPCalculator.workoutXP
+        xp += try newPRCount(for: session, in: context) * XPCalculator.prBonusXP
+        if try isThirdFinishedWorkoutThisWeek(session, in: context) {
+            xp += XPCalculator.weeklyBonusXP
+        }
+
+        state.totalXP += xp
+    }
+
+    private static func newPRCount(for session: WorkoutSession, in context: ModelContext) throws -> Int {
+        var count = 0
+        for log in session.exerciseLogs {
+            guard log.succeeded, let exercise = log.exercise else { continue }
+            guard let priorBest = try StatsCalculator.priorSucceededMaxWeight(for: exercise, before: session, in: context) else { continue }
+            if log.targetWeight > priorBest {
+                count += 1
+            }
+        }
+        return count
+    }
+
+    private static func isThirdFinishedWorkoutThisWeek(_ session: WorkoutSession, in context: ModelContext, calendar: Calendar = .current) throws -> Bool {
+        guard let weekInterval = calendar.dateInterval(of: .weekOfYear, for: session.startedAt) else { return false }
+        let sessionID = session.persistentModelID
+        let otherFinishedThisWeek = try context.fetch(FetchDescriptor<WorkoutSession>())
+            .filter {
+                $0.persistentModelID != sessionID
+                    && $0.finishedAt != nil
+                    && weekInterval.contains($0.startedAt)
+            }
+        return otherFinishedThisWeek.count == 2
     }
 
     public static func cancelWorkout(_ session: WorkoutSession, in context: ModelContext) throws {
