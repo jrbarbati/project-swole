@@ -95,7 +95,13 @@ public enum WorkoutSessionService {
     }
 
     private static func awardXP(for session: WorkoutSession, in context: ModelContext) throws {
-        guard let state = try context.fetch(FetchDescriptor<GamificationState>()).first else { return }
+        let state: GamificationState
+        if let existing = try context.fetch(FetchDescriptor<GamificationState>()).first {
+            state = existing
+        } else {
+            state = GamificationState(totalXP: 0)
+            context.insert(state)
+        }
 
         var xp = XPCalculator.workoutXP
         xp += try newPRCount(for: session, in: context) * XPCalculator.prBonusXP

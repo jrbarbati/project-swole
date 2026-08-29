@@ -182,3 +182,52 @@ private func makeSeededContext() throws -> ModelContext {
     let stateAfterFourth = try context.fetch(FetchDescriptor<GamificationState>()).first
     #expect(stateAfterFourth?.totalXP == (XPCalculator.workoutXP + XPCalculator.weeklyBonusXP) + XPCalculator.workoutXP)
 }
+
+@Test func finishWorkoutCreatesGamificationStateIfMissingAndStillAwardsXP() throws {
+    let context = try makeSeededContext()
+    if let existingState = try context.fetch(FetchDescriptor<GamificationState>()).first {
+        context.delete(existingState)
+    }
+    try context.save()
+    #expect(try context.fetch(FetchDescriptor<GamificationState>()).isEmpty)
+
+    let session = try WorkoutSessionService.startWorkout(in: context)
+    try WorkoutSessionService.finishWorkout(session, in: context)
+
+    let state = try context.fetch(FetchDescriptor<GamificationState>()).first
+    #expect(state?.totalXP == XPCalculator.workoutXP)
+}
+
+@Test func finishWorkoutAwardsNoPRBonusOnTheVeryFirstSessionForBrandNewExercisesEvenIfTheyAllSucceed() throws {
+    let context = try makeSeededContext()
+    let session = try WorkoutSessionService.startWorkout(in: context)
+    for log in session.exerciseLogs {
+        for set in log.sets {
+            set.repsCompleted = log.targetReps
+        }
+    }
+
+    try WorkoutSessionService.finishWorkout(session, in: context)
+
+    let state = try context.fetch(FetchDescriptor<GamificationState>()).first
+    #expect(state?.totalXP == XPCalculator.workoutXP)
+}
+
+@Test func xpAccumulatesThroughFinishWorkoutIntoTheLevelProgressPipeline() throws {
+    let context = try makeSeededContext()
+
+    var session = try WorkoutSessionService.startWorkout(in: context)
+    try WorkoutSessionService.finishWorkout(session, in: context)
+    session = try WorkoutSessionService.startWorkout(in: context)
+    try WorkoutSessionService.finishWorkout(session, in: context)
+    session = try WorkoutSessionService.startWorkout(in: context)
+    try WorkoutSessionService.finishWorkout(session, in: context)
+
+    let state = try context.fetch(FetchDescriptor<GamificationState>()).first
+    #expect(state?.totalXP == 300)
+
+    let progress = XPCalculator.progress(forXP: state?.totalXP ?? 0)
+    #expect(progress.level == 3)
+    #expect(progress.current == 109)
+    #expect(progress.needed == 260)
+}
