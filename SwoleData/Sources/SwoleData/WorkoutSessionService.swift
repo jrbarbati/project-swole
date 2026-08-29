@@ -15,7 +15,10 @@ public enum WorkoutSessionService {
     }
 
     @discardableResult
-    public static func startWorkout(in context: ModelContext) throws -> WorkoutSession {
+    public static func startWorkout(
+        in context: ModelContext,
+        weightOverrides: [PersistentIdentifier: Double] = [:]
+    ) throws -> WorkoutSession {
         guard let settings = try context.fetch(FetchDescriptor<UserSettings>()).first else {
             throw WorkoutSessionServiceError.missingUserSettings
         }
@@ -41,6 +44,7 @@ public enum WorkoutSessionService {
                 config: config,
                 order: entry.order,
                 in: session,
+                weightOverride: weightOverrides[exercise.persistentModelID],
                 context: context
             )
         }
@@ -54,9 +58,11 @@ public enum WorkoutSessionService {
         config: UserExerciseConfig,
         order: Int,
         in session: WorkoutSession,
+        weightOverride: Double?,
         context: ModelContext
     ) throws {
-        let targetWeight = try ProgressionCalculator.nextTargetWeight(for: exercise, config: config, in: context)
+        let targetWeight = try weightOverride
+            ?? ProgressionCalculator.nextTargetWeight(for: exercise, config: config, in: context)
         config.weightOverride = nil
         let log = ExerciseLog(
             session: session,

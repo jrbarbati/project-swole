@@ -86,3 +86,23 @@ private func makeSeededContext() throws -> ModelContext {
     #expect(squatLog?.targetWeight == 225)
     #expect(config?.weightOverride == nil)
 }
+
+@Test func startWorkoutPrefersAnExplicitWeightOverrideOverConfigAndComputedWeight() throws {
+    let context = try makeSeededContext()
+
+    let squat = try context.fetch(FetchDescriptor<Exercise>())
+        .first { $0.name == "Squat" }
+    let config = try context.fetch(FetchDescriptor<UserExerciseConfig>())
+        .first { $0.exercise?.persistentModelID == squat?.persistentModelID }
+    config?.weightOverride = 225
+    try context.save()
+
+    let session = try WorkoutSessionService.startWorkout(
+        in: context,
+        weightOverrides: [squat!.persistentModelID: 250]
+    )
+
+    let squatLog = session.exerciseLogs.first { $0.exercise?.name == "Squat" }
+    #expect(squatLog?.targetWeight == 250)
+    #expect(config?.weightOverride == nil)
+}
