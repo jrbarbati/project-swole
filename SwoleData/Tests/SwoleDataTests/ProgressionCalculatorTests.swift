@@ -3,18 +3,40 @@ import SwiftData
 import Foundation
 @testable import SwoleData
 
-@Test func nextTargetWeightWithNoHistoryUsesStartingWeight() throws {
-    let context = try makeInMemoryContext()
-    
-    let squat = Exercise(name: "Squat", defaultSetCount: 5, defaultRepsPerSet: 5)
-    context.insert(squat)
-    
+private func makeSquatConfig(for squat: Exercise, in context: ModelContext) -> UserExerciseConfig {
     let config = UserExerciseConfig(
         exercise: squat, startingWeight: 45, weightIncrement: 5,
         setCount: 5, repsPerSet: 5, deloadThreshold: 3, deloadPercentage: 0.10
     )
     context.insert(config)
-    
+    return config
+}
+
+@discardableResult
+private func insertSession(
+    for exercise: Exercise,
+    on date: Date = Date(),
+    weight: Double,
+    lastSetReps: Int,
+    in context: ModelContext
+) -> ExerciseLog {
+    let session = WorkoutSession(startedAt: date, workoutType: .a)
+    context.insert(session)
+
+    let log = ExerciseLog(session: session, exercise: exercise, targetWeight: weight, targetReps: 5)
+    context.insert(log)
+    for n in 1...5 {
+        context.insert(SetLog(exerciseLog: log, setNumber: n, repsCompleted: n == 5 ? lastSetReps : 5))
+    }
+    return log
+}
+
+@Test func nextTargetWeightWithNoHistoryUsesStartingWeight() throws {
+    let context = try makeInMemoryContext()
+
+    let squat = Exercise(name: "Squat", defaultSetCount: 5, defaultRepsPerSet: 5)
+    context.insert(squat)
+    let config = makeSquatConfig(for: squat, in: context)
     try context.save()
 
     let next = try ProgressionCalculator.nextTargetWeight(for: squat, config: config, in: context)
@@ -26,22 +48,9 @@ import Foundation
 
     let squat = Exercise(name: "Squat", defaultSetCount: 5, defaultRepsPerSet: 5)
     context.insert(squat)
+    let config = makeSquatConfig(for: squat, in: context)
 
-    let config = UserExerciseConfig(
-        exercise: squat, startingWeight: 45, weightIncrement: 5,
-        setCount: 5, repsPerSet: 5, deloadThreshold: 3, deloadPercentage: 0.10
-    )
-    context.insert(config)
-
-    let session = WorkoutSession(startedAt: Date(), workoutType: .a)
-    context.insert(session)
-    
-    let log = ExerciseLog(session: session, exercise: squat, targetWeight: 135, targetReps: 5)
-    context.insert(log)
-    
-    for n in 1...5 {
-        context.insert(SetLog(exerciseLog: log, setNumber: n, repsCompleted: 5))
-    }
+    insertSession(for: squat, weight: 135, lastSetReps: 5, in: context)
     try context.save()
 
     let next = try ProgressionCalculator.nextTargetWeight(for: squat, config: config, in: context)
@@ -50,25 +59,12 @@ import Foundation
 
 @Test func nextTargetWeightRepeatsAfterASingleFailure() throws {
     let context = try makeInMemoryContext()
-    
+
     let squat = Exercise(name: "Squat", defaultSetCount: 5, defaultRepsPerSet: 5)
     context.insert(squat)
-    
-    let config = UserExerciseConfig(
-        exercise: squat, startingWeight: 45, weightIncrement: 5,
-        setCount: 5, repsPerSet: 5, deloadThreshold: 3, deloadPercentage: 0.10
-    )
-    context.insert(config)
+    let config = makeSquatConfig(for: squat, in: context)
 
-    let session = WorkoutSession(startedAt: Date(), workoutType: .a)
-    context.insert(session)
-
-    let log = ExerciseLog(session: session, exercise: squat, targetWeight: 200, targetReps: 5)
-    context.insert(log)
-    
-    for n in 1...5 {
-        context.insert(SetLog(exerciseLog: log, setNumber: n, repsCompleted: n == 5 ? 3 : 5))
-    }
+    insertSession(for: squat, weight: 200, lastSetReps: 3, in: context)
     try context.save()
 
     let next = try ProgressionCalculator.nextTargetWeight(for: squat, config: config, in: context)
@@ -77,30 +73,15 @@ import Foundation
 
 @Test func nextTargetWeightDeloadsAfterThreeConsecutiveFailures() throws {
     let context = try makeInMemoryContext()
-    
+
     let squat = Exercise(name: "Squat", defaultSetCount: 5, defaultRepsPerSet: 5)
     context.insert(squat)
-    
-    let config = UserExerciseConfig(
-        exercise: squat, startingWeight: 45, weightIncrement: 5,
-        setCount: 5, repsPerSet: 5, deloadThreshold: 3, deloadPercentage: 0.10
-    )
-    context.insert(config)
+    let config = makeSquatConfig(for: squat, in: context)
 
     let calendar = Calendar.current
-    
     for dayOffset in 0..<3 {
         let date = calendar.date(byAdding: .day, value: dayOffset, to: Date())!
-
-        let session = WorkoutSession(startedAt: date, workoutType: .a)
-        context.insert(session)
-        
-        let log = ExerciseLog(session: session, exercise: squat, targetWeight: 200, targetReps: 5)
-        context.insert(log)
-        
-        for n in 1...5 {
-            context.insert(SetLog(exerciseLog: log, setNumber: n, repsCompleted: n < 5 ? 5 : 3  ))
-        }
+        insertSession(for: squat, on: date, weight: 200, lastSetReps: 3, in: context)
     }
     try context.save()
 
@@ -117,32 +98,16 @@ import Foundation
     context.insert(squat)
 
     let calendar = Calendar.current
-    
-    let weights = [200.0, 200.0, 200.0, 180.0]
-    
-    for (dayOffset, weight) in weights.enumerated() {
+    for (dayOffset, weight) in [200.0, 200.0, 200.0, 180.0].enumerated() {
         let date = calendar.date(byAdding: .day, value: dayOffset, to: Date())!
-
-        let session = WorkoutSession(startedAt: date, workoutType: .a)
-        context.insert(session)
-        
-        let log = ExerciseLog(session: session, exercise: squat, targetWeight: weight, targetReps: 5)
-        context.insert(log)
-        
-        for n in 1...5 {
-            context.insert(SetLog(exerciseLog: log, setNumber: n, repsCompleted: n < 5 ? 5 : 3  ))
-        }
+        insertSession(for: squat, on: date, weight: weight, lastSetReps: 3, in: context)
     }
     try context.save()
 
     let streak = try ProgressionCalculator.currentFailStreak(for: squat, in: context)
     #expect(streak == 1)
 
-    let config = UserExerciseConfig(
-        exercise: squat, startingWeight: 45, weightIncrement: 5,
-        setCount: 5, repsPerSet: 5, deloadThreshold: 3, deloadPercentage: 0.10
-    )
-    context.insert(config)
+    let config = makeSquatConfig(for: squat, in: context)
     try context.save()
 
     let next = try ProgressionCalculator.nextTargetWeight(for: squat, config: config, in: context)
@@ -154,22 +119,9 @@ import Foundation
 
     let squat = Exercise(name: "Squat", defaultSetCount: 5, defaultRepsPerSet: 5)
     context.insert(squat)
+    let config = makeSquatConfig(for: squat, in: context)
 
-    let config = UserExerciseConfig(
-        exercise: squat, startingWeight: 45, weightIncrement: 5,
-        setCount: 5, repsPerSet: 5, deloadThreshold: 3, deloadPercentage: 0.10
-    )
-    context.insert(config)
-
-    let session = WorkoutSession(startedAt: Date(), workoutType: .a)
-    context.insert(session)
-
-    let log = ExerciseLog(session: session, exercise: squat, targetWeight: 135, targetReps: 5)
-    context.insert(log)
-
-    for n in 1...5 {
-        context.insert(SetLog(exerciseLog: log, setNumber: n, repsCompleted: 5))
-    }
+    insertSession(for: squat, weight: 135, lastSetReps: 5, in: context)
     try context.save()
 
     // Without an override, history says 140 (135 + increment, last session succeeded).

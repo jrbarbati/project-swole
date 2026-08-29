@@ -1,7 +1,5 @@
 import SwiftUI
 
-// MARK: - Color helpers
-
 extension UIColor {
     convenience init(rgb: UInt32) {
         self.init(
@@ -22,8 +20,6 @@ extension Color {
     }
 }
 
-// MARK: - Weight formatting
-
 extension Double {
     /// Weights are shown to the tenths place regardless of unit — lb-to-kg
     /// conversion produces long decimals that would otherwise leak through.
@@ -32,14 +28,11 @@ extension Double {
     }
 }
 
-// MARK: - Tokens
-
 enum Theme {
 
     // MARK: Surfaces
     /// Page background.
     static let canvas = Color(light: 0xF7F5F1, dark: 0x0E0D0C)
-    /// Default card.
     static let surface = Color(light: 0xFFFEFB, dark: 0x131211)
     /// The one card that currently has focus (the active exercise).
     static let surfaceActive = Color(light: 0xFFFEFB, dark: 0x151413)
@@ -49,7 +42,6 @@ enum Theme {
     // MARK: Lines
     /// List row separators, tab bar top edge.
     static let hairline = Color(light: 0xE6E2DA, dark: 0x1A1817)
-    /// Resting card border.
     static let border = Color(light: 0xE6E2DA, dark: 0x221F1E)
     /// Focused card border, control outlines.
     static let borderStrong = Color(light: 0xDED9D0, dark: 0x2B2826)
@@ -97,7 +89,6 @@ enum Theme {
         static func body(_ size: CGFloat = 15) -> SwiftUI.Font {
             .system(size: size, weight: .regular)
         }
-        /// Numeric readouts: weights, reps, timers.
         static func numeric(_ size: CGFloat, weight: SwiftUI.Font.Weight = .medium) -> SwiftUI.Font {
             .system(size: size, weight: weight, design: .monospaced)
         }
@@ -130,8 +121,6 @@ enum Theme {
     /// 20pt margins and 7pt gaps, tiles land at ~64pt — comfortably above 44.
     static let minTouchTarget: CGFloat = 44
 }
-
-// MARK: - Shared label style
 
 struct MetaLabel: View {
     let text: String

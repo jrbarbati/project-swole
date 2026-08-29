@@ -1,10 +1,3 @@
-//
-//  _x5iveUITestsLaunchTests.swift
-//  5x5iveUITests
-//
-//  Created by Joseph Barbati on 8/27/26.
-//
-
 import XCTest
 
 final class _x5iveUITestsLaunchTests: XCTestCase {

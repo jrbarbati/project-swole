@@ -10,7 +10,6 @@ public final class ActiveWorkoutViewModel {
         public let outcome: RestOutcome
         public let startDate: Date
         public let endDate: Date
-        /// Copy for the docked bar, e.g. "REST · SET 5 NEXT".
         public let nextUpLabel: String
 
         public init(outcome: RestOutcome, startDate: Date, endDate: Date, nextUpLabel: String) {
@@ -26,14 +25,13 @@ public final class ActiveWorkoutViewModel {
             max(0, Int(endDate.timeIntervalSince(date).rounded(.up)))
         }
 
-        /// 0…1 elapsed, for the bar's progress track.
+        /// 0…1 elapsed.
         public func progress(at date: Date) -> Double {
             guard totalSeconds > 0 else { return 1 }
             return min(1, max(0, date.timeIntervalSince(startDate) / totalSeconds))
         }
     }
 
-    /// Non-blocking "Squat done — 5 5 5 3 5 · UNDO" banner.
     public struct Completion: Equatable {
         public let logID: PersistentIdentifier
         public let exerciseName: String
@@ -50,7 +48,6 @@ public final class ActiveWorkoutViewModel {
 
     public private(set) var activeRest: ActiveRest?
     public private(set) var completion: Completion?
-    /// Set on appear, then moved by auto-advance.
     public var expandedLogID: PersistentIdentifier?
 
     private(set) var settleFireCount = 0
@@ -65,13 +62,12 @@ public final class ActiveWorkoutViewModel {
 
     // MARK: - Logging
 
-    /// Primary interaction: tap cycles nil → target → target-1 … → 0 → nil.
+    /// Tap cycles nil → target → target-1 … → 0 → nil.
     public func tap(set: SetLog, in log: ExerciseLog, isFinalExercise: Bool, config: UserExerciseConfig) {
         set.repsCompleted = RepCycle.next(current: set.repsCompleted, target: log.targetReps)
         scheduleSettle(for: set, in: log, isFinalExercise: isFinalExercise, config: config)
     }
 
-    /// Secondary interaction: long-press opens the rep picker, which sets a value directly.
     /// `nil` clears the set.
     public func setReps(_ reps: Int?, for set: SetLog, in log: ExerciseLog, isFinalExercise: Bool, config: UserExerciseConfig) {
         set.repsCompleted = reps
@@ -87,8 +83,7 @@ public final class ActiveWorkoutViewModel {
         completion = nil
     }
 
-    /// Undo in the completion banner: clears the last logged set of that exercise
-    /// and pulls focus back to it.
+    /// Clears the last logged set of the completed exercise and refocuses it.
     public func undoCompletion(in logs: [ExerciseLog]) {
         guard let completion,
               let log = logs.first(where: { $0.persistentModelID == completion.logID }) else { return }
@@ -103,7 +98,6 @@ public final class ActiveWorkoutViewModel {
 
     // MARK: - Auto-advance
 
-    /// Called on appear and after each exercise finishes.
     public func focusFirstIncomplete(in logs: [ExerciseLog]) {
         let sortedLogs = logs.sorted { $0.order < $1.order }
         expandedLogID = (sortedLogs.first { $0.hasUnloggedSets } ?? sortedLogs.last)?.persistentModelID

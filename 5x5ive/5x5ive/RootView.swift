@@ -24,8 +24,10 @@ struct RootView: View {
         }
         .tint(Theme.accent)
         .background(Theme.canvas)
-        .fullScreenCover(item: activeSessions.first) { session in
-            ActiveWorkoutView(session: session)
+        .fullScreenCover(isPresented: .constant(activeSessions.first != nil)) {
+            if let session = activeSessions.first {
+                ActiveWorkoutView(session: session)
+            }
         }
     }
 
@@ -39,8 +41,6 @@ struct RootView: View {
             .accessibilityHidden(selectedTab != tab)
     }
 }
-
-// MARK: - Custom tab bar
 
 struct CustomTabBar: View {
     @Binding var selection: RootView.Tab
@@ -75,28 +75,5 @@ struct CustomTabBar: View {
         .padding(.top, 20)
         .padding(.horizontal, Theme.Space.screen)
         .overlay(alignment: .top) { Rectangle().fill(Theme.hairline).frame(height: 1) }
-    }
-}
-
-// MARK: - fullScreenCover(item:) shim
-// SwiftData models are Identifiable; this keeps the call site readable.
-
-private extension View {
-    func fullScreenCover<Item: Identifiable, Content: View>(
-        item: Item?,
-        @ViewBuilder content: @escaping (Item) -> Content
-    ) -> some View {
-        modifier(FullScreenItemModifier(item: item, sheetContent: content))
-    }
-}
-
-private struct FullScreenItemModifier<Item: Identifiable, SheetContent: View>: ViewModifier {
-    let item: Item?
-    let sheetContent: (Item) -> SheetContent
-
-    func body(content: Content) -> some View {
-        content.fullScreenCover(isPresented: .constant(item != nil)) {
-            if let item { sheetContent(item) }
-        }
     }
 }

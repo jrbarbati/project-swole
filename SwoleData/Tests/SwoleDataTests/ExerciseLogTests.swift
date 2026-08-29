@@ -4,11 +4,7 @@ import Foundation
 @testable import SwoleData
 
 @Test func succeededIsTrueOnlyWhenEverySetHitTargetReps() throws {
-    let container = try ModelContainer(
-        for: Exercise.self, WorkoutSession.self, ExerciseLog.self, SetLog.self,
-        configurations: ModelConfiguration(isStoredInMemoryOnly: true)
-    )
-    let context = ModelContext(container)
+    let context = try makeInMemoryContext()
 
     let squat = Exercise(name: "Squat", defaultSetCount: 5, defaultRepsPerSet: 5)
     let session = WorkoutSession(startedAt: Date(), workoutType: .a)
@@ -30,11 +26,7 @@ import Foundation
 }
 
 @Test func succeededIsFalseWhenAnySetIsNotStarted() throws {
-    let container = try ModelContainer(
-        for: Exercise.self, WorkoutSession.self, ExerciseLog.self, SetLog.self,
-        configurations: ModelConfiguration(isStoredInMemoryOnly: true)
-    )
-    let context = ModelContext(container)
+    let context = try makeInMemoryContext()
 
     let squat = Exercise(name: "Squat", defaultSetCount: 5, defaultRepsPerSet: 5)
     let session = WorkoutSession(startedAt: Date(), workoutType: .a)
@@ -53,11 +45,7 @@ import Foundation
 }
 
 @Test func deletingSessionCascadesToLogsAndSets() throws {
-    let container = try ModelContainer(
-        for: Exercise.self, WorkoutSession.self, ExerciseLog.self, SetLog.self,
-        configurations: ModelConfiguration(isStoredInMemoryOnly: true)
-    )
-    let context = ModelContext(container)
+    let context = try makeInMemoryContext()
 
     let squat = Exercise(name: "Squat", defaultSetCount: 5, defaultRepsPerSet: 5)
     let session = WorkoutSession(startedAt: Date(), workoutType: .a)

@@ -3,11 +3,7 @@ import SwiftData
 @testable import SwoleData
 
 @Test func exerciseCanBeInsertedAndFetched() throws {
-    let container = try ModelContainer(
-        for: Exercise.self,
-        configurations: ModelConfiguration(isStoredInMemoryOnly: true)
-    )
-    let context = ModelContext(container)
+    let context = try makeInMemoryContext()
 
     context.insert(Exercise(name: "Squat", defaultSetCount: 5, defaultRepsPerSet: 5))
     try context.save()

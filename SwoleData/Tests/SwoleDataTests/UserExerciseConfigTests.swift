@@ -3,11 +3,7 @@ import SwiftData
 @testable import SwoleData
 
 @Test func userExerciseConfigLinksToItsExercise() throws {
-    let container = try ModelContainer(
-        for: Exercise.self, UserExerciseConfig.self,
-        configurations: ModelConfiguration(isStoredInMemoryOnly: true)
-    )
-    let context = ModelContext(container)
+    let context = try makeInMemoryContext()
 
     let squat = Exercise(name: "Squat", defaultSetCount: 5, defaultRepsPerSet: 5)
     context.insert(squat)

@@ -1,10 +1,3 @@
-//
-//  _x5iveUITests.swift
-//  5x5iveUITests
-//
-//  Created by Joseph Barbati on 8/27/26.
-//
-
 import XCTest
 
 final class _x5iveUITests: XCTestCase {
@@ -22,17 +15,10 @@ final class _x5iveUITests: XCTestCase {
         return app
     }
 
-    @MainActor
-    func testExample() throws {
-        let app = XCUIApplication()
-        app.launch()
-    }
-
-    @MainActor
-    func testLaunchPerformance() throws {
-        measure(metrics: [XCTApplicationLaunchMetric()]) {
-            XCUIApplication().launch()
-        }
+    private func setTile(in app: XCUIApplication, labeled label: String, value: String) -> XCUIElement {
+        app.descendants(matching: .any).matching(
+            NSPredicate(format: "label == %@ AND value == %@", label, value)
+        ).firstMatch
     }
 
     // MARK: - Active workout flow
@@ -65,9 +51,7 @@ final class _x5iveUITests: XCTestCase {
 
         // The view model debounces for 1.5s before settling the tap and
         // starting rest, so poll past that window.
-        let loggedSet = app.descendants(matching: .any).matching(
-            NSPredicate(format: "label == %@ AND value == %@", "Set 1", "5 reps")
-        ).firstMatch
+        let loggedSet = setTile(in: app, labeled: "Set 1", value: "5 reps")
         XCTAssertTrue(loggedSet.waitForExistence(timeout: 5))
 
         // RestBar's skip button renders through MetaLabel, which uppercases its text.
@@ -142,9 +126,9 @@ final class _x5iveUITests: XCTestCase {
         XCTAssertTrue(alert.waitForExistence(timeout: 5))
         alert.buttons["Delete Workout"].tap()
 
-        // Back on Today: the adjustment used to start that (now-canceled)
-        // workout must not still be applied — Squat should show its plain
-        // computed weight again, not the stale 50 from before.
+        // The adjustment used to start that now-canceled workout must not
+        // still be applied — Squat should show its plain computed weight
+        // again, not the stale 50 from before.
         XCTAssertTrue(app.buttons["Start Workout A"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["45"].waitForExistence(timeout: 5))
     }
@@ -169,9 +153,7 @@ final class _x5iveUITests: XCTestCase {
         let firstSet = app.descendants(matching: .any).matching(identifier: "Set 1").firstMatch
         XCTAssertTrue(firstSet.waitForExistence(timeout: 5))
         firstSet.tap()
-        let loggedSet = app.descendants(matching: .any).matching(
-            NSPredicate(format: "label == %@ AND value == %@", "Set 1", "5 reps")
-        ).firstMatch
+        let loggedSet = setTile(in: app, labeled: "Set 1", value: "5 reps")
         XCTAssertTrue(loggedSet.waitForExistence(timeout: 5))
 
         app.buttons["Save Workout"].tap()
@@ -182,9 +164,7 @@ final class _x5iveUITests: XCTestCase {
         app.buttons["Edit workout"].firstMatch.tap()
 
         XCTAssertTrue(app.staticTexts["Edit Workout"].waitForExistence(timeout: 5))
-        let editedSet = app.descendants(matching: .any).matching(
-            NSPredicate(format: "label == %@ AND value == %@", "Set 1", "5 reps")
-        ).firstMatch
+        let editedSet = setTile(in: app, labeled: "Set 1", value: "5 reps")
         XCTAssertTrue(editedSet.waitForExistence(timeout: 5))
     }
 
@@ -233,8 +213,8 @@ final class _x5iveUITests: XCTestCase {
         // The edited log is still the most recent — the computed next
         // weight should now be 90 (85 + 5), not the stale 50 from before.
         app.buttons["SETTINGS"].tap()
-        XCTAssertTrue(app.staticTexts["settingsWeight-Overhead Press"].waitForExistence(timeout: 5))
-        XCTAssertEqual(app.staticTexts["settingsWeight-Overhead Press"].label, "90")
+        XCTAssertTrue(weightLabel.waitForExistence(timeout: 5))
+        XCTAssertEqual(weightLabel.label, "90")
     }
 
     // MARK: - Bug repro: a stale manual weight nudge shadows history edits
@@ -250,7 +230,8 @@ final class _x5iveUITests: XCTestCase {
         let settingsIncrement = app.buttons["settingsWeightIncrement-Overhead Press"]
         XCTAssertTrue(settingsIncrement.waitForExistence(timeout: 5))
         settingsIncrement.tap() // 45 -> 50
-        XCTAssertEqual(app.staticTexts["settingsWeight-Overhead Press"].label, "50")
+        let weightLabel = app.staticTexts["settingsWeight-Overhead Press"]
+        XCTAssertEqual(weightLabel.label, "50")
 
         // Instead of starting a live workout, back-fill one via History —
         // this never consumed the override before this fix.
@@ -277,7 +258,7 @@ final class _x5iveUITests: XCTestCase {
         // The edit should win: next weight is 75 (70 + 5), not the stale
         // 50 nudge from before the backfill.
         app.buttons["SETTINGS"].tap()
-        XCTAssertTrue(app.staticTexts["settingsWeight-Overhead Press"].waitForExistence(timeout: 5))
-        XCTAssertEqual(app.staticTexts["settingsWeight-Overhead Press"].label, "75")
+        XCTAssertTrue(weightLabel.waitForExistence(timeout: 5))
+        XCTAssertEqual(weightLabel.label, "75")
     }
 }

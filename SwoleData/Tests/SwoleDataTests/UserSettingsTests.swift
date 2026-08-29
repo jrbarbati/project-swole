@@ -3,11 +3,7 @@ import SwiftData
 @testable import SwoleData
 
 @Test func userSettingsStoresUnitAndLastWorkoutType() throws {
-    let container = try ModelContainer(
-        for: UserSettings.self,
-        configurations: ModelConfiguration(isStoredInMemoryOnly: true)
-    )
-    let context = ModelContext(container)
+    let context = try makeInMemoryContext()
 
     let settings = UserSettings(unit: .lb, lastCompletedWorkoutType: nil)
     context.insert(settings)
