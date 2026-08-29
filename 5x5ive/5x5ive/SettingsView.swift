@@ -10,10 +10,19 @@ struct SettingsView: View {
     @AppStorage("appearance") private var appearance: String = "dark"
     @AppStorage("showWarmups") private var showWarmups: Bool = true
 
+    @State private var selectedConfigID: PersistentIdentifier?
+
     private var settings: UserSettings? { settingsList.first }
 
     private var sortedConfigs: [UserExerciseConfig] {
         configs.sorted { ($0.exercise?.name ?? "") < ($1.exercise?.name ?? "") }
+    }
+
+    /// Which exercise's rest/deload settings are being edited. Defaults to
+    /// the first exercise alphabetically.
+    private var selectedConfig: UserExerciseConfig? {
+        (selectedConfigID.flatMap { id in configs.first { $0.persistentModelID == id } })
+            ?? sortedConfigs.first
     }
 
     var body: some View {
@@ -50,13 +59,45 @@ struct SettingsView: View {
 
     private var restSection: some View {
         SettingsSection(title: "Rest") {
-            HStack(spacing: 10) {
-                RestCard(label: "After success",
-                         seconds: sortedConfigs.first?.restSecondsOnSuccess ?? 90)
-                RestCard(label: "After a miss",
-                         seconds: sortedConfigs.first?.restSecondsOnFail ?? 180)
+            VStack(alignment: .leading, spacing: 12) {
+                exercisePicker
+                if let config = selectedConfig {
+                    HStack(spacing: 10) {
+                        RestCard(label: "After success", seconds: config.restSecondsOnSuccess) { delta in
+                            config.restSecondsOnSuccess = clampRestSeconds(config.restSecondsOnSuccess + delta)
+                            try? modelContext.save()
+                        }
+                        RestCard(label: "After a miss", seconds: config.restSecondsOnFail) { delta in
+                            config.restSecondsOnFail = clampRestSeconds(config.restSecondsOnFail + delta)
+                            try? modelContext.save()
+                        }
+                    }
+                }
             }
         }
+    }
+
+    private var exercisePicker: some View {
+        Menu {
+            ForEach(sortedConfigs) { config in
+                Button(config.exercise?.name ?? "") {
+                    selectedConfigID = config.persistentModelID
+                }
+            }
+        } label: {
+            HStack(spacing: 6) {
+                Text(selectedConfig?.exercise?.name ?? "Select exercise")
+                    .font(Theme.Font.title(16))
+                    .foregroundStyle(Theme.textPrimary)
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(Theme.textMuted)
+            }
+        }
+    }
+
+    private func clampRestSeconds(_ seconds: Int) -> Int {
+        min(600, max(15, seconds))
     }
 
     private var preferencesSection: some View {
@@ -80,9 +121,14 @@ struct SettingsView: View {
                     }
                 }
                 SettingRow(title: "Deload after", subtitle: deloadSubtitle) {
-                    Text("\(sortedConfigs.first?.deloadThreshold ?? 3) ›")
-                        .font(Theme.Font.numeric(16))
-                        .foregroundStyle(Theme.textMuted)
+                    HStack(spacing: 10) {
+                        StepButton(symbol: "−") { stepDeloadThreshold(-1) }
+                        Text("\(selectedConfig?.deloadThreshold ?? 3)")
+                            .font(Theme.Font.numeric(16))
+                            .foregroundStyle(Theme.textPrimary)
+                            .frame(width: 18)
+                        StepButton(symbol: "+") { stepDeloadThreshold(1) }
+                    }
                 }
                 SettingRow(title: "Warmup sets", showsDivider: false) {
                     Toggle("", isOn: $showWarmups)
@@ -94,8 +140,14 @@ struct SettingsView: View {
     }
 
     private var deloadSubtitle: String {
-        let percentage = Int((sortedConfigs.first?.deloadPercentage ?? 0.1) * 100)
+        let percentage = Int((selectedConfig?.deloadPercentage ?? 0.1) * 100)
         return "Drop \(percentage)% after repeated misses"
+    }
+
+    private func stepDeloadThreshold(_ delta: Int) {
+        guard let config = selectedConfig else { return }
+        config.deloadThreshold = min(10, max(1, config.deloadThreshold + delta))
+        try? modelContext.save()
     }
 }
 
@@ -186,13 +238,21 @@ struct StepButton: View {
 private struct RestCard: View {
     let label: String
     let seconds: Int
+    let onStep: (Int) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             MetaLabel(text: label, color: Theme.textDim).tracking(1.2)
-            Text(String(format: "%d:%02d", seconds / 60, seconds % 60))
-                .font(Theme.Font.numeric(22))
-                .foregroundStyle(Theme.textPrimary)
+            HStack {
+                Text(String(format: "%d:%02d", seconds / 60, seconds % 60))
+                    .font(Theme.Font.numeric(22))
+                    .foregroundStyle(Theme.textPrimary)
+                Spacer()
+                HStack(spacing: 8) {
+                    StepButton(symbol: "−") { onStep(-15) }
+                    StepButton(symbol: "+") { onStep(15) }
+                }
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.vertical, 14)

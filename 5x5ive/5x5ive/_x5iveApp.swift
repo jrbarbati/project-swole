@@ -6,7 +6,10 @@ import SwoleData
 struct _x5iveApp: App {
     let sharedModelContainer: ModelContainer = {
         let schema = swoleSchema
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+        // UI tests pass this to get a clean, seeded store every launch
+        // instead of accumulating state across runs.
+        let inMemory = ProcessInfo.processInfo.arguments.contains("-uiTestingInMemoryStore")
+        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: inMemory)
 
         do {
             let container = try ModelContainer(for: schema, configurations: [modelConfiguration])

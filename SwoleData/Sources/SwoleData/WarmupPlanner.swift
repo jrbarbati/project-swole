@@ -2,9 +2,8 @@
 //  WarmupPlanner.swift
 //  SwoleData
 //
-//  New in the redesign. Warmups are derived, never stored — they exist only
-//  as checkboxes in the exercise sheet, so nothing needs to persist unless
-//  you later decide warmup completion should survive app relaunch.
+//  Warmup sets themselves are always derived, never stored. Completion is
+//  persisted separately, on ExerciseLog.completedWarmupIDs.
 //
 
 import Foundation

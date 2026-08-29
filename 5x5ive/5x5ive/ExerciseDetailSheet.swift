@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import SwoleData
+import Charts
 
 struct ExerciseDetailSheet: View {
     let log: ExerciseLog
@@ -10,7 +11,6 @@ struct ExerciseDetailSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
 
-    @State private var completedWarmups: Set<Int> = []
     @State private var note: String = ""
     @State private var history: [ExerciseLog] = []
 
@@ -92,7 +92,7 @@ struct ExerciseDetailSheet: View {
     }
 
     private func warmupRow(_ warmup: WarmupSet) -> some View {
-        let isDone = completedWarmups.contains(warmup.id)
+        let isDone = log.completedWarmupIDs.contains(warmup.id)
         return Button {
             toggleWarmup(warmup.id)
         } label: {
@@ -185,11 +185,12 @@ struct ExerciseDetailSheet: View {
     // MARK: Actions
 
     private func toggleWarmup(_ id: Int) {
-        if completedWarmups.contains(id) {
-            completedWarmups.remove(id)
+        if let index = log.completedWarmupIDs.firstIndex(of: id) {
+            log.completedWarmupIDs.remove(at: index)
         } else {
-            completedWarmups.insert(id)
+            log.completedWarmupIDs.append(id)
         }
+        try? modelContext.save()
     }
 
     @MainActor
@@ -207,39 +208,45 @@ struct ExerciseDetailSheet: View {
 
 // MARK: - Trend chart
 //
-// Bars, not a line: the working weight is a step function and the misses are
-// the story. Red bar = the session was failed at that weight.
+// Line, not bars: reads as a progression at a glance. Misses stay visible as
+// red point markers rather than red bars.
 
 struct WeightTrendChart: View {
     let logs: [ExerciseLog]
     let currentWeight: Double
 
-    private let maxBarHeight: Double = 104
+    private struct Point: Identifiable {
+        let id: Int
+        let weight: Double
+        let color: Color
+    }
 
-    private var maxWeight: Double {
-        max(currentWeight, logs.map(\.targetWeight).max() ?? currentWeight, 1)
+    private var points: [Point] {
+        let history = logs.enumerated().map { index, entry in
+            Point(id: index, weight: entry.targetWeight, color: entry.succeeded ? Theme.borderStrong : Theme.missStroke)
+        }
+        return history + [Point(id: history.count, weight: currentWeight, color: Theme.accent)]
     }
 
     var body: some View {
         VStack(spacing: 8) {
-            HStack(alignment: .bottom, spacing: 7) {
-                ForEach(logs) { entry in
-                    bar(weight: entry.targetWeight, color: entry.succeeded ? Theme.borderStrong : Theme.missStroke)
-                }
-                bar(weight: currentWeight, color: Theme.accent)
+            Chart(points) { point in
+                LineMark(x: .value("Session", point.id), y: .value("Weight", point.weight))
+                    .foregroundStyle(Theme.borderStrong)
+                    .interpolationMethod(.linear)
+                PointMark(x: .value("Session", point.id), y: .value("Weight", point.weight))
+                    .foregroundStyle(point.color)
+                    .symbolSize(30)
             }
+            .chartXAxis(.hidden)
+            .chartYAxis(.hidden)
+            .chartYScale(domain: .automatic(includesZero: false))
+
             HStack {
                 MetaLabel(text: (logs.first?.targetWeight ?? currentWeight).formatted(), color: Theme.textDim)
                 Spacer()
                 MetaLabel(text: "\(currentWeight.formatted()) today", color: Theme.textDim)
             }
         }
-    }
-
-    private func bar(weight: Double, color: Color) -> some View {
-        RoundedRectangle(cornerRadius: 5, style: .continuous)
-            .fill(color)
-            .frame(maxWidth: .infinity)
-            .frame(height: max(8, maxBarHeight * weight / maxWeight))
     }
 }

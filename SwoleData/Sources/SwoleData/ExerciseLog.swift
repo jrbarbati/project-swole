@@ -10,6 +10,9 @@ public final class ExerciseLog {
     public var order: Int = 0
     /// Per-exercise note, captured in the exercise sheet.
     public var note: String?
+    /// IDs of `WarmupSet`s checked off in the exercise sheet, so warmup
+    /// progress survives an app relaunch mid-workout.
+    public var completedWarmupIDs: [Int] = []
     @Relationship(deleteRule: .cascade, inverse: \SetLog.exerciseLog)
     public var sets: [SetLog] = []
 

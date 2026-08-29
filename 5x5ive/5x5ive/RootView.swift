@@ -12,33 +12,34 @@ struct RootView: View {
     enum Tab: Hashable { case today, history, settings }
 
     var body: some View {
-        TabView(selection: $selectedTab) {
-            NavigationStack { TodayView() }
-                .tag(Tab.today)
-                .tabItem { Label("Today", systemImage: "square.grid.2x2") }
+        VStack(spacing: 0) {
+            ZStack {
+                tabContent(.today) { NavigationStack { TodayView() } }
+                tabContent(.history) { NavigationStack { HistoryView() } }
+                tabContent(.settings) { NavigationStack { SettingsView() } }
+            }
 
-            NavigationStack { HistoryView() }
-                .tag(Tab.history)
-                .tabItem { Label("History", systemImage: "list.bullet") }
-
-            NavigationStack { SettingsView() }
-                .tag(Tab.settings)
-                .tabItem { Label("Settings", systemImage: "slider.horizontal.3") }
+            CustomTabBar(selection: $selectedTab)
         }
         .tint(Theme.accent)
         .background(Theme.canvas)
-        // The design shows a flat, monospaced tab bar rather than the stock
-        // iOS one. If you want to match the mock exactly, drop the .tabItem
-        // labels above, hide the system bar, and render CustomTabBar (below)
-        // inside a VStack. Keeping the system bar is a legitimate call —
-        // it gets you accessibility and haptics for free.
         .fullScreenCover(item: activeSessions.first) { session in
             ActiveWorkoutView(session: session)
         }
     }
+
+    /// Keeps every tab's view mounted so switching back preserves its state,
+    /// matching TabView's behavior without pulling in its native tab bar chrome.
+    @ViewBuilder
+    private func tabContent<Content: View>(_ tab: Tab, @ViewBuilder content: () -> Content) -> some View {
+        content()
+            .opacity(selectedTab == tab ? 1 : 0)
+            .allowsHitTesting(selectedTab == tab)
+            .accessibilityHidden(selectedTab != tab)
+    }
 }
 
-// MARK: - Optional custom tab bar (matches mock 01/08/10)
+// MARK: - Custom tab bar (matches mock 01/08/10)
 
 struct CustomTabBar: View {
     @Binding var selection: RootView.Tab

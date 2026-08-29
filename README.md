@@ -24,22 +24,15 @@ training logic split into a standalone `SwoleData` package.
 - **Plate math** — per-side plate breakdown shown next to every target
   weight, for both lb and kg.
 - **Warmup ramp** — derived warmup sets (bar, ~55/75/90%) shown per exercise;
-  not persisted across app relaunch yet.
+  completion persists across an app relaunch mid-workout.
 - **History** — session log grouped by month, plus a per-lift working-weight
   trend chart.
 - **Notes** — free-text notes per session and per exercise.
-- **Settings** — editable working weights, units (lb/kg), and appearance
-  (dark/light).
+- **Settings** — editable working weights, rest durations, deload threshold
+  (per exercise), units (lb/kg), and appearance (dark/light).
+- **Flat tab bar** — custom monospaced tab bar (matches the mock) instead of
+  the stock iOS one.
 - Full dark/light theming; all data persisted locally via SwiftData.
-
-### Planned
-
-- Editable rest durations and deload threshold from Settings (currently
-  read-only).
-- Persisting warmup-set completion across a relaunch mid-workout.
-- Custom flat tab bar as an alternative to the stock iOS tab bar (the
-  component exists, just not wired up as the default).
-- Broader interactive UI test coverage for the active-workout flow.
 
 ## Structure
 
