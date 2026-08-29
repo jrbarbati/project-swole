@@ -67,12 +67,13 @@ struct TodayView: View {
         VStack(spacing: Theme.Space.cardGap) {
             ForEach(nextEntries) { entry in
                 if let exercise = entry.exercise, let config = config(for: exercise) {
+                    let weight = displayWeight(for: exercise, config: config)
                     NextLiftRow(
                         exercise: exercise,
                         config: config,
                         unit: settings?.unit ?? .lb,
-                        targetWeight: displayWeight(for: exercise, config: config),
-                        delta: displayWeight(for: exercise, config: config) - baselineWeight(for: exercise, config: config),
+                        targetWeight: weight,
+                        delta: weight - baselineWeight(for: exercise, config: config),
                         onDecrement: { adjustWeight(for: exercise, config: config, by: -config.weightIncrement) },
                         onIncrement: { adjustWeight(for: exercise, config: config, by: config.weightIncrement) }
                     )
