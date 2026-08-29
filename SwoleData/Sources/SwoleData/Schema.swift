@@ -8,4 +8,5 @@ public let swoleSchema = Schema([
     ExerciseLog.self,
     SetLog.self,
     UserSettings.self,
+    GamificationState.self,
 ])
