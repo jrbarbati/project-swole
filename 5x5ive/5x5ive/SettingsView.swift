@@ -4,6 +4,7 @@ import SwoleData
 
 struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.resetAppData) private var resetAppData
     @Query private var settingsList: [UserSettings]
     @Query private var configs: [UserExerciseConfig]
 
@@ -11,6 +12,7 @@ struct SettingsView: View {
     @AppStorage("showWarmups") private var showWarmups: Bool = true
 
     @State private var selectedConfigID: PersistentIdentifier?
+    @State private var showDeleteConfirmation = false
 
     private var settings: UserSettings? { settingsList.first }
 
@@ -36,6 +38,7 @@ struct SettingsView: View {
                 workingWeightsSection
                 restSection
                 preferencesSection
+                dangerSection
             }
             .padding(.horizontal, Theme.Space.screen)
             .padding(.bottom, 24)
@@ -43,6 +46,42 @@ struct SettingsView: View {
         .background(Theme.canvas)
         .toolbar(.hidden, for: .navigationBar)
         .preferredColorScheme(appearance == "dark" ? .dark : .light)
+        .confirmationDialog(
+            "Delete all data?",
+            isPresented: $showDeleteConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Delete Everything", role: .destructive) { deleteAllData() }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This permanently deletes all workout history and resets your level and settings. This can't be undone.")
+        }
+    }
+
+    private var dangerSection: some View {
+        SettingsSection(title: "Danger zone") {
+            Button(role: .destructive) {
+                showDeleteConfirmation = true
+            } label: {
+                HStack {
+                    Text("Delete Data")
+                        .font(Theme.Font.body(16))
+                    Spacer()
+                }
+                .padding(.vertical, 10)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(Theme.miss)
+            .accessibilityIdentifier("deleteDataButton")
+        }
+    }
+
+    private func deleteAllData() {
+        resetAppData()
+        // AppStorage lives in UserDefaults, independent of the model
+        // container, so it isn't reset by the container swap above.
+        appearance = "dark"
+        showWarmups = true
     }
 
     private var workingWeightsSection: some View {

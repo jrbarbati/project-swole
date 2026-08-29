@@ -5,6 +5,18 @@ public enum WorkoutSessionServiceError: Error {
     case missingUserSettings
 }
 
+/// XP breakdown for a single `finishWorkout` call, for post-workout display.
+public struct XPAward: Equatable {
+    public let base: Int
+    public let prCount: Int
+    public let prBonus: Int
+    public let perfectBonus: Int
+    public let weeklyBonus: Int
+    public let xpBefore: Int
+    public let xpAfter: Int
+    public var total: Int { base + prBonus + perfectBonus + weeklyBonus }
+}
+
 public enum WorkoutSessionService {
     public static func activeSession(in context: ModelContext) throws -> WorkoutSession? {
         let descriptor = FetchDescriptor<WorkoutSession>(
@@ -78,7 +90,8 @@ public enum WorkoutSessionService {
         }
     }
 
-    public static func finishWorkout(_ session: WorkoutSession, in context: ModelContext) throws {
+    @discardableResult
+    public static func finishWorkout(_ session: WorkoutSession, in context: ModelContext) throws -> XPAward {
         for log in session.exerciseLogs {
             for set in log.sets where set.repsCompleted == nil {
                 set.repsCompleted = 0
@@ -89,12 +102,13 @@ public enum WorkoutSessionService {
         let allSettings = try context.fetch(FetchDescriptor<UserSettings>())
         allSettings.first?.lastCompletedWorkoutType = session.workoutType
 
-        try awardXP(for: session, in: context)
+        let award = try awardXP(for: session, in: context)
 
         try context.save()
+        return award
     }
 
-    private static func awardXP(for session: WorkoutSession, in context: ModelContext) throws {
+    private static func awardXP(for session: WorkoutSession, in context: ModelContext) throws -> XPAward {
         let state: GamificationState
         if let existing = try context.fetch(FetchDescriptor<GamificationState>()).first {
             state = existing
@@ -103,13 +117,25 @@ public enum WorkoutSessionService {
             context.insert(state)
         }
 
-        var xp = XPCalculator.workoutXP
-        xp += try newPRCount(for: session, in: context) * XPCalculator.prBonusXP
-        if try isThirdFinishedWorkoutThisWeek(session, in: context) {
-            xp += XPCalculator.weeklyBonusXP
-        }
+        let xpBefore = state.totalXP
+        let base = XPCalculator.workoutXP
+        let prCount = try newPRCount(for: session, in: context)
+        let prBonus = prCount * XPCalculator.prBonusXP
+        let isPerfect = !session.exerciseLogs.isEmpty && session.exerciseLogs.allSatisfy(\.succeeded)
+        let perfectBonus = isPerfect ? XPCalculator.perfectBonusXP : 0
+        let weeklyBonus = try isThirdFinishedWorkoutThisWeek(session, in: context) ? XPCalculator.weeklyBonusXP : 0
 
-        state.totalXP += xp
+        let award = XPAward(
+            base: base,
+            prCount: prCount,
+            prBonus: prBonus,
+            perfectBonus: perfectBonus,
+            weeklyBonus: weeklyBonus,
+            xpBefore: xpBefore,
+            xpAfter: xpBefore + base + prBonus + perfectBonus + weeklyBonus
+        )
+        state.totalXP = award.xpAfter
+        return award
     }
 
     private static func newPRCount(for session: WorkoutSession, in context: ModelContext) throws -> Int {

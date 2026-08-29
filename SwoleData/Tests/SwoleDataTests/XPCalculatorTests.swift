@@ -4,6 +4,7 @@ import Testing
 @Test func xpConstantsMatchDesignedRates() {
     #expect(XPCalculator.workoutXP == 60)
     #expect(XPCalculator.prBonusXP == 20)
+    #expect(XPCalculator.perfectBonusXP == 20)
     #expect(XPCalculator.weeklyBonusXP == 120)
 }
 

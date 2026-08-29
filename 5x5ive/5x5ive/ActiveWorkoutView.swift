@@ -55,9 +55,17 @@ struct ActiveWorkoutView: View {
         .sheet(item: $detailLog) { log in detailSheet(for: log) }
         .sheet(item: $repPickerTarget) { target in repPickerSheet(for: target) }
         .fullScreenCover(isPresented: $showSummary) {
-            WorkoutSummaryView(session: session, onSave: finish) {
-                showSummary = false
-            }
+            WorkoutSummaryView(
+                session: session,
+                onSave: finish,
+                onDone: {
+                    showSummary = false
+                    dismiss()
+                },
+                onBack: {
+                    showSummary = false
+                }
+            )
         }
         .alert("Cancel this workout?", isPresented: $showCancelConfirmation) {
             Button("Delete Workout", role: .destructive) { cancel() }
@@ -217,9 +225,8 @@ struct ActiveWorkoutView: View {
         log.persistentModelID == logs.last?.persistentModelID
     }
 
-    private func finish() {
+    private func finish() -> XPAward? {
         try? WorkoutSessionService.finishWorkout(session, in: modelContext)
-        dismiss()
     }
 
     private func cancel() {

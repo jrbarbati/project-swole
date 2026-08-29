@@ -210,7 +210,66 @@ private func makeSeededContext() throws -> ModelContext {
     try WorkoutSessionService.finishWorkout(session, in: context)
 
     let state = try context.fetch(FetchDescriptor<GamificationState>()).first
+    #expect(state?.totalXP == XPCalculator.workoutXP + XPCalculator.perfectBonusXP)
+}
+
+@Test func finishWorkoutAwardsPerfectBonusWhenEverySetHitsFullTargetReps() throws {
+    let context = try makeSeededContext()
+    let session = try WorkoutSessionService.startWorkout(in: context)
+    for log in session.exerciseLogs {
+        for set in log.sets { set.repsCompleted = log.targetReps }
+    }
+
+    let award = try WorkoutSessionService.finishWorkout(session, in: context)
+
+    #expect(award.perfectBonus == XPCalculator.perfectBonusXP)
+    let state = try context.fetch(FetchDescriptor<GamificationState>()).first
+    #expect(state?.totalXP == XPCalculator.workoutXP + XPCalculator.perfectBonusXP)
+}
+
+@Test func finishWorkoutAwardsNoPerfectBonusWhenAnySetMissesTargetReps() throws {
+    let context = try makeSeededContext()
+    let session = try WorkoutSessionService.startWorkout(in: context)
+    for log in session.exerciseLogs {
+        for set in log.sets { set.repsCompleted = log.targetReps }
+    }
+    // One rep short on a single set breaks the perfect streak.
+    session.exerciseLogs.first?.sets.first?.repsCompleted = (session.exerciseLogs.first?.targetReps ?? 1) - 1
+
+    let award = try WorkoutSessionService.finishWorkout(session, in: context)
+
+    #expect(award.perfectBonus == 0)
+    let state = try context.fetch(FetchDescriptor<GamificationState>()).first
     #expect(state?.totalXP == XPCalculator.workoutXP)
+}
+
+@Test func finishWorkoutAwardsNoPerfectBonusForASessionWithNoExerciseLogs() throws {
+    let context = try makeSeededContext()
+    let session = WorkoutSession(startedAt: .now, workoutType: .a)
+    context.insert(session)
+    try context.save()
+
+    let award = try WorkoutSessionService.finishWorkout(session, in: context)
+
+    #expect(award.perfectBonus == 0)
+    let state = try context.fetch(FetchDescriptor<GamificationState>()).first
+    #expect(state?.totalXP == XPCalculator.workoutXP)
+}
+
+@Test func finishWorkoutReturnsAnXPAwardBreakdownMatchingTheAppliedTotal() throws {
+    let context = try makeSeededContext()
+    let session = try WorkoutSessionService.startWorkout(in: context)
+
+    let award = try WorkoutSessionService.finishWorkout(session, in: context)
+
+    #expect(award.base == XPCalculator.workoutXP)
+    #expect(award.prCount == 0)
+    #expect(award.prBonus == 0)
+    #expect(award.perfectBonus == 0)
+    #expect(award.weeklyBonus == 0)
+    #expect(award.total == XPCalculator.workoutXP)
+    #expect(award.xpBefore == 0)
+    #expect(award.xpAfter == XPCalculator.workoutXP)
 }
 
 @Test func xpAccumulatesThroughFinishWorkoutIntoTheLevelProgressPipeline() throws {

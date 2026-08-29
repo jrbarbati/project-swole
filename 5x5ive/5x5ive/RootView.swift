@@ -8,6 +8,12 @@ struct RootView: View {
     private var activeSessions: [WorkoutSession]
 
     @State private var selectedTab: Tab = .today
+    /// Snapshot of the presented session, deliberately NOT recomputed from
+    /// `activeSessions` on every change: `finishWorkout` sets `finishedAt`
+    /// (which drops the session from that query) while the workout's XP
+    /// reveal screen still needs to stay on screen, so presentation is
+    /// cleared only by an explicit dismiss, not reactively by the query.
+    @State private var presentedSession: WorkoutSession?
 
     enum Tab: Hashable { case today, history, stats, settings }
 
@@ -24,10 +30,13 @@ struct RootView: View {
         }
         .tint(Theme.accent)
         .background(Theme.canvas)
-        .fullScreenCover(isPresented: .constant(activeSessions.first != nil)) {
-            if let session = activeSessions.first {
-                ActiveWorkoutView(session: session)
-            }
+        .fullScreenCover(item: $presentedSession) { session in
+            ActiveWorkoutView(session: session)
+        }
+        .onAppear { presentedSession = activeSessions.first }
+        .onChange(of: activeSessions.first?.persistentModelID) { _, newID in
+            guard newID != nil, presentedSession == nil else { return }
+            presentedSession = activeSessions.first
         }
     }
 

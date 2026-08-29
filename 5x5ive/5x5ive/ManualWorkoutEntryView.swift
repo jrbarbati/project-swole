@@ -170,7 +170,7 @@ struct ManualWorkoutEntryView: View {
         Button {
             save()
         } label: {
-            Text("Save Workout")
+            Text("Complete Workout")
                 .font(.system(size: 16, weight: .bold))
                 .foregroundStyle(Theme.accentInk)
                 .frame(maxWidth: .infinity)

@@ -4,7 +4,8 @@ import SwoleData
 
 struct WorkoutSummaryView: View {
     let session: WorkoutSession
-    let onSave: () -> Void
+    let onSave: () -> XPAward?
+    let onDone: () -> Void
     let onBack: () -> Void
 
     @Environment(\.modelContext) private var modelContext
@@ -12,10 +13,19 @@ struct WorkoutSummaryView: View {
     @Query private var settingsList: [UserSettings]
 
     @State private var note: String = ""
+    @State private var xpAward: XPAward?
 
     private var unit: MeasurementUnit { settingsList.first?.unit ?? .lb }
 
     var body: some View {
+        if let xpAward {
+            XPRevealView(award: xpAward, onDone: onDone)
+        } else {
+            summary
+        }
+    }
+
+    private var summary: some View {
         VStack(alignment: .leading, spacing: 0) {
             header
                 .padding(.top, 34)
@@ -82,9 +92,13 @@ struct WorkoutSummaryView: View {
         VStack(spacing: 10) {
             Button {
                 session.note = note.isEmpty ? nil : note
-                onSave()
+                if let award = onSave() {
+                    withAnimation(.easeInOut(duration: 0.25)) {
+                        xpAward = award
+                    }
+                }
             } label: {
-                Text("Save Workout")
+                Text("Complete Workout")
                     .font(.system(size: 17, weight: .bold))
                     .foregroundStyle(Theme.accentInk)
                     .frame(maxWidth: .infinity)

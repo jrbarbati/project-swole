@@ -74,6 +74,31 @@ final class _x5iveUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Start Workout A"].waitForExistence(timeout: 5))
     }
 
+    @MainActor
+    func testFinishingAWorkoutShowsTheXPRevealScreenWithTheEarnedTotal() throws {
+        let app = launchApp()
+
+        app.buttons["Start Workout A"].tap()
+        XCTAssertTrue(app.staticTexts["Workout A"].waitForExistence(timeout: 5))
+
+        app.buttons["Finish Workout"].tap()
+
+        let alert = app.alerts["Some sets aren't logged"]
+        XCTAssertTrue(alert.waitForExistence(timeout: 5))
+        alert.buttons["Review & Finish"].tap()
+
+        XCTAssertTrue(app.buttons["Complete Workout"].waitForExistence(timeout: 5))
+        app.buttons["Complete Workout"].tap()
+
+        // A fresh install starts at 0 XP; the workout's base 60 XP crosses the
+        // level 1 threshold (50 XP), so this always shows the level-up variant.
+        XCTAssertTrue(app.staticTexts["LEVEL UP!"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["+60"].waitForExistence(timeout: 5))
+
+        app.buttons["Done"].tap()
+        XCTAssertTrue(app.buttons["Start Workout B"].waitForExistence(timeout: 5))
+    }
+
     // MARK: - Today view weight adjust
 
     @MainActor
@@ -156,7 +181,7 @@ final class _x5iveUITests: XCTestCase {
         let loggedSet = setTile(in: app, labeled: "Set 1", value: "5 reps")
         XCTAssertTrue(loggedSet.waitForExistence(timeout: 5))
 
-        app.buttons["Save Workout"].tap()
+        app.buttons["Complete Workout"].tap()
 
         XCTAssertTrue(app.staticTexts["History"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["Workout A"].waitForExistence(timeout: 5))
@@ -187,7 +212,7 @@ final class _x5iveUITests: XCTestCase {
             XCTAssertTrue(tile.waitForExistence(timeout: 5))
             tile.tap()
         }
-        app.buttons["Save Workout"].tap()
+        app.buttons["Complete Workout"].tap()
         XCTAssertTrue(app.staticTexts["History"].waitForExistence(timeout: 5))
 
         // Baseline: one successful log at 45 should compute next weight as 50.
@@ -208,7 +233,7 @@ final class _x5iveUITests: XCTestCase {
             NSPredicate(format: "identifier == %@ AND label == %@", "manualWeight-Overhead Press", "85")
         ).firstMatch
         XCTAssertTrue(editedWeightLabel.waitForExistence(timeout: 5))
-        app.buttons["Save Workout"].tap()
+        app.buttons["Complete Workout"].tap()
 
         // The edited log is still the most recent — the computed next
         // weight should now be 90 (85 + 5), not the stale 50 from before.
@@ -243,7 +268,7 @@ final class _x5iveUITests: XCTestCase {
         for setNumber in 1...5 {
             app.descendants(matching: .any)["manualSet\(setNumber)-Overhead Press"].tap()
         }
-        app.buttons["Save Workout"].tap()
+        app.buttons["Complete Workout"].tap()
         XCTAssertTrue(app.staticTexts["History"].waitForExistence(timeout: 5))
 
         // Now edit that same (most recent) workout's Overhead Press weight
@@ -253,12 +278,67 @@ final class _x5iveUITests: XCTestCase {
         let editIncrement = app.buttons["manualWeightIncrement-Overhead Press"]
         XCTAssertTrue(editIncrement.waitForExistence(timeout: 5))
         for _ in 0..<4 { editIncrement.tap() } // 50 -> 70
-        app.buttons["Save Workout"].tap()
+        app.buttons["Complete Workout"].tap()
 
         // The edit should win: next weight is 75 (70 + 5), not the stale
         // 50 nudge from before the backfill.
         app.buttons["SETTINGS"].tap()
         XCTAssertTrue(weightLabel.waitForExistence(timeout: 5))
         XCTAssertEqual(weightLabel.label, "75")
+    }
+
+    // MARK: - Delete data
+
+    @MainActor
+    func testDeletingDataResetsAppToFreshInstallState() throws {
+        let app = launchApp()
+
+        // Nudge a working weight so there's non-default state to wipe.
+        app.buttons["SETTINGS"].tap()
+        let incrementButton = app.buttons["settingsWeightIncrement-Squat"]
+        XCTAssertTrue(incrementButton.waitForExistence(timeout: 5))
+        incrementButton.tap()
+        let weightLabel = app.staticTexts["settingsWeight-Squat"]
+        XCTAssertEqual(weightLabel.label, "50")
+
+        app.buttons["deleteDataButton"].tap()
+        let confirmButton = app.buttons["Delete Everything"]
+        XCTAssertTrue(confirmButton.waitForExistence(timeout: 5))
+        confirmButton.tap()
+
+        // Weight is back to the seeded default, not the pre-delete nudge.
+        XCTAssertTrue(weightLabel.waitForExistence(timeout: 5))
+        XCTAssertEqual(weightLabel.label, "45")
+
+        // Today tab is back to its never-used state.
+        app.buttons["TODAY"].tap()
+        XCTAssertTrue(app.buttons["Start Workout A"].waitForExistence(timeout: 5))
+    }
+
+    @MainActor
+    func testDeletingDataWithFinishedWorkoutInHistoryDoesNotCrash() throws {
+        let app = launchApp()
+
+        app.buttons["HISTORY"].tap()
+        app.buttons["Log past workout"].tap()
+        XCTAssertTrue(app.staticTexts["Log Past Workout"].waitForExistence(timeout: 5))
+        app.buttons["Continue"].tap()
+        let firstSet = app.descendants(matching: .any).matching(identifier: "Set 1").firstMatch
+        XCTAssertTrue(firstSet.waitForExistence(timeout: 5))
+        firstSet.tap()
+        let loggedSet = setTile(in: app, labeled: "Set 1", value: "5 reps")
+        XCTAssertTrue(loggedSet.waitForExistence(timeout: 5))
+        app.buttons["Complete Workout"].tap()
+        XCTAssertTrue(app.staticTexts["History"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Workout A"].waitForExistence(timeout: 5))
+
+        app.buttons["SETTINGS"].tap()
+        app.buttons["deleteDataButton"].tap()
+        let confirmButton = app.buttons["Delete Everything"]
+        XCTAssertTrue(confirmButton.waitForExistence(timeout: 5))
+        confirmButton.tap()
+
+        XCTAssertTrue(app.staticTexts["settingsWeight-Squat"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.exists)
     }
 }

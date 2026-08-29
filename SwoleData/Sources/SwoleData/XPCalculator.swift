@@ -3,6 +3,7 @@ import Foundation
 public enum XPCalculator {
     public static let workoutXP = 60
     public static let prBonusXP = 20
+    public static let perfectBonusXP = 20
     public static let weeklyBonusXP = 120
 
     private static let levelCurveConstant = 50.0
