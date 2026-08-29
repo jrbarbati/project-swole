@@ -52,3 +52,13 @@ import SwiftData
     #expect(configs.allSatisfy { $0.restSecondsOnSuccess == 90 })
     #expect(configs.allSatisfy { $0.restSecondsOnFail == 180 })
 }
+
+@Test func seedCreatesGamificationStateStartingAtZeroXP() throws {
+    let context = try makeInMemoryContext()
+
+    _ = try StandardSeed.seed(in: context)
+
+    let states = try context.fetch(FetchDescriptor<GamificationState>())
+    #expect(states.count == 1)
+    #expect(states.first?.totalXP == 0)
+}

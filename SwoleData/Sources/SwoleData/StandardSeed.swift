@@ -53,6 +53,7 @@ public enum StandardSeed {
         }
 
         context.insert(UserSettings(unit: .lb, lastCompletedWorkoutType: nil))
+        context.insert(GamificationState(totalXP: 0))
 
         try context.save()
         return true
