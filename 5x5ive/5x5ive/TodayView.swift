@@ -10,11 +10,16 @@ struct TodayView: View {
     @Query(filter: #Predicate<WorkoutSession> { $0.finishedAt != nil },
            sort: \WorkoutSession.startedAt, order: .reverse)
     private var finishedSessions: [WorkoutSession]
+    @Query private var gamificationStates: [GamificationState]
 
     @State private var startError: String?
     @State private var weightAdjustments: [PersistentIdentifier: Double] = [:]
 
     private var settings: UserSettings? { settingsList.first }
+
+    private var xpProgress: (current: Int, needed: Int, level: Int) {
+        XPCalculator.progress(forXP: gamificationStates.first?.totalXP ?? 0)
+    }
 
     private var nextWorkoutType: WorkoutType {
         guard let settings else { return .a }
@@ -36,6 +41,10 @@ struct TodayView: View {
             header
             WeekStrip(sessions: finishedSessions)
                 .padding(.top, 22)
+                .padding(.horizontal, Theme.Space.screen)
+
+            xpBar
+                .padding(.top, 14)
                 .padding(.horizontal, Theme.Space.screen)
 
             liftList
@@ -84,6 +93,31 @@ struct TodayView: View {
                 MetaLabel(text: holdNote, color: Theme.textFaint)
                     .padding(.horizontal, 4)
             }
+        }
+    }
+
+    private var xpBar: some View {
+        let progress = xpProgress
+        let fraction = progress.needed > 0 ? CGFloat(progress.current) / CGFloat(progress.needed) : 0
+
+        return VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                MetaLabel(text: "Level \(progress.level)", color: Theme.textDim)
+                    .tracking(1.2)
+                Spacer()
+                MetaLabel(text: "\(progress.current) / \(progress.needed) XP", color: Theme.textDim)
+                    .tracking(1.2)
+            }
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: Theme.Radius.chip, style: .continuous)
+                        .fill(Theme.surfaceSunken)
+                    RoundedRectangle(cornerRadius: Theme.Radius.chip, style: .continuous)
+                        .fill(Theme.accent)
+                        .frame(width: geo.size.width * fraction)
+                }
+            }
+            .frame(height: 8)
         }
     }
 
