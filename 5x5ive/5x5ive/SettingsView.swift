@@ -199,14 +199,17 @@ private struct WeightRow: View {
                     config.weightOverride = max(0, currentWeight - config.weightIncrement)
                     onChange()
                 }
+                .accessibilityIdentifier("settingsWeightDecrement-\(config.exercise?.name ?? "")")
                 Text(unit.fromLb(currentWeight).formattedWeight)
                     .font(Theme.Font.numeric(19))
                     .foregroundStyle(Theme.textPrimary)
                     .frame(width: 64)
+                    .accessibilityIdentifier("settingsWeight-\(config.exercise?.name ?? "")")
                 StepButton(symbol: "+") {
                     config.weightOverride = currentWeight + config.weightIncrement
                     onChange()
                 }
+                .accessibilityIdentifier("settingsWeightIncrement-\(config.exercise?.name ?? "")")
             }
         }
         .padding(.vertical, 14)

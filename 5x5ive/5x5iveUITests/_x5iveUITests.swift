@@ -148,4 +148,136 @@ final class _x5iveUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Start Workout A"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["45"].waitForExistence(timeout: 5))
     }
+
+    // MARK: - Manual past workout entry
+
+    @MainActor
+    func testLoggingAPastWorkoutAddsItToHistoryAndCanBeEdited() throws {
+        let app = launchApp()
+
+        app.buttons["HISTORY"].tap()
+
+        let addButton = app.buttons["Log past workout"]
+        XCTAssertTrue(addButton.waitForExistence(timeout: 5))
+        addButton.tap()
+
+        XCTAssertTrue(app.staticTexts["Log Past Workout"].waitForExistence(timeout: 5))
+        app.buttons["Continue"].tap()
+
+        // Every exercise card is expanded at once here (unlike the active
+        // workout screen), so several "Set 1" tiles exist simultaneously.
+        let firstSet = app.descendants(matching: .any).matching(identifier: "Set 1").firstMatch
+        XCTAssertTrue(firstSet.waitForExistence(timeout: 5))
+        firstSet.tap()
+        let loggedSet = app.descendants(matching: .any).matching(
+            NSPredicate(format: "label == %@ AND value == %@", "Set 1", "5 reps")
+        ).firstMatch
+        XCTAssertTrue(loggedSet.waitForExistence(timeout: 5))
+
+        app.buttons["Save Workout"].tap()
+
+        XCTAssertTrue(app.staticTexts["History"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Workout A"].waitForExistence(timeout: 5))
+
+        app.buttons["Edit workout"].firstMatch.tap()
+
+        XCTAssertTrue(app.staticTexts["Edit Workout"].waitForExistence(timeout: 5))
+        let editedSet = app.descendants(matching: .any).matching(
+            NSPredicate(format: "label == %@ AND value == %@", "Set 1", "5 reps")
+        ).firstMatch
+        XCTAssertTrue(editedSet.waitForExistence(timeout: 5))
+    }
+
+    // MARK: - Bug repro: editing history should move the computed next weight
+
+    @MainActor
+    func testEditingTheMostRecentWorkoutsWeightUpdatesTheComputedNextWeight() throws {
+        let app = launchApp()
+
+        app.buttons["HISTORY"].tap()
+        app.buttons["Log past workout"].tap()
+        XCTAssertTrue(app.staticTexts["Log Past Workout"].waitForExistence(timeout: 5))
+        app.buttons["Workout B"].tap()
+        app.buttons["Continue"].tap()
+
+        // Log all 5 Overhead Press sets to target reps — a clean success at
+        // the seeded starting weight (45).
+        for setNumber in 1...5 {
+            let tile = app.descendants(matching: .any)["manualSet\(setNumber)-Overhead Press"]
+            XCTAssertTrue(tile.waitForExistence(timeout: 5))
+            tile.tap()
+        }
+        app.buttons["Save Workout"].tap()
+        XCTAssertTrue(app.staticTexts["History"].waitForExistence(timeout: 5))
+
+        // Baseline: one successful log at 45 should compute next weight as 50.
+        app.buttons["SETTINGS"].tap()
+        let weightLabel = app.staticTexts["settingsWeight-Overhead Press"]
+        XCTAssertTrue(weightLabel.waitForExistence(timeout: 5))
+        XCTAssertEqual(weightLabel.label, "50")
+
+        // Edit that same (most recent) workout's Overhead Press weight up to
+        // 85, keeping every set at target reps (still a success).
+        app.buttons["HISTORY"].tap()
+        app.buttons["Edit workout"].firstMatch.tap()
+        XCTAssertTrue(app.staticTexts["Edit Workout"].waitForExistence(timeout: 5))
+        let incrementButton = app.buttons["manualWeightIncrement-Overhead Press"]
+        XCTAssertTrue(incrementButton.waitForExistence(timeout: 5))
+        for _ in 0..<8 { incrementButton.tap() } // 45 -> 85 in +5 steps
+        let editedWeightLabel = app.descendants(matching: .any).matching(
+            NSPredicate(format: "identifier == %@ AND label == %@", "manualWeight-Overhead Press", "85")
+        ).firstMatch
+        XCTAssertTrue(editedWeightLabel.waitForExistence(timeout: 5))
+        app.buttons["Save Workout"].tap()
+
+        // The edited log is still the most recent — the computed next
+        // weight should now be 90 (85 + 5), not the stale 50 from before.
+        app.buttons["SETTINGS"].tap()
+        XCTAssertTrue(app.staticTexts["settingsWeight-Overhead Press"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.staticTexts["settingsWeight-Overhead Press"].label, "90")
+    }
+
+    // MARK: - Bug repro: a stale manual weight nudge shadows history edits
+
+    @MainActor
+    func testLoggingAPastWorkoutAfterANudgeThenEditingItReflectsTheEditNotTheStaleNudge() throws {
+        let app = launchApp()
+
+        // Nudge Overhead Press up via Settings — this sets a one-shot
+        // weightOverride that's normally consumed the next time a workout
+        // is *started* live.
+        app.buttons["SETTINGS"].tap()
+        let settingsIncrement = app.buttons["settingsWeightIncrement-Overhead Press"]
+        XCTAssertTrue(settingsIncrement.waitForExistence(timeout: 5))
+        settingsIncrement.tap() // 45 -> 50
+        XCTAssertEqual(app.staticTexts["settingsWeight-Overhead Press"].label, "50")
+
+        // Instead of starting a live workout, back-fill one via History —
+        // this never consumed the override before this fix.
+        app.buttons["HISTORY"].tap()
+        app.buttons["Log past workout"].tap()
+        XCTAssertTrue(app.staticTexts["Log Past Workout"].waitForExistence(timeout: 5))
+        app.buttons["Workout B"].tap()
+        app.buttons["Continue"].tap()
+        for setNumber in 1...5 {
+            app.descendants(matching: .any)["manualSet\(setNumber)-Overhead Press"].tap()
+        }
+        app.buttons["Save Workout"].tap()
+        XCTAssertTrue(app.staticTexts["History"].waitForExistence(timeout: 5))
+
+        // Now edit that same (most recent) workout's Overhead Press weight
+        // up to 70, keeping it a success.
+        app.buttons["Edit workout"].firstMatch.tap()
+        XCTAssertTrue(app.staticTexts["Edit Workout"].waitForExistence(timeout: 5))
+        let editIncrement = app.buttons["manualWeightIncrement-Overhead Press"]
+        XCTAssertTrue(editIncrement.waitForExistence(timeout: 5))
+        for _ in 0..<4 { editIncrement.tap() } // 50 -> 70
+        app.buttons["Save Workout"].tap()
+
+        // The edit should win: next weight is 75 (70 + 5), not the stale
+        // 50 nudge from before the backfill.
+        app.buttons["SETTINGS"].tap()
+        XCTAssertTrue(app.staticTexts["settingsWeight-Overhead Press"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.staticTexts["settingsWeight-Overhead Press"].label, "75")
+    }
 }

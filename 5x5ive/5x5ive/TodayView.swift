@@ -276,16 +276,17 @@ private struct NextLiftRow: View {
 private struct WeekStrip: View {
     let sessions: [WorkoutSession]
 
-    private var days: [(date: Date, trained: Bool, isToday: Bool, hasPriorWorkout: Bool)] {
+    private var days: [(date: Date, trained: Bool, isToday: Bool, isRestDay: Bool)] {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: .now)
         let weekday = calendar.component(.weekday, from: today) // 1 = Sunday
         let sunday = calendar.date(byAdding: .day, value: -(weekday - 1), to: today)!
+        let sessionDates = sessions.map(\.startedAt)
         return (0..<7).map { offset in
             let day = calendar.date(byAdding: .day, value: offset, to: sunday)!
             let trained = sessions.contains { calendar.isDate($0.startedAt, inSameDayAs: day) }
-            let hasPriorWorkout = sessions.contains { $0.startedAt < day }
-            return (day, trained, calendar.isDate(day, inSameDayAs: today), hasPriorWorkout)
+            let isRestDay = RestDayCalculator.isRestDay(day, sessionDates: sessionDates, calendar: calendar)
+            return (day, trained, calendar.isDate(day, inSameDayAs: today), isRestDay)
         }
     }
 
@@ -317,6 +318,14 @@ private struct WeekStrip: View {
                             .fill(day.trained ? Theme.accent.opacity(0.22) : Theme.surfaceSunken)
                             .frame(height: 34)
                             .overlay {
+                                if day.isRestDay {
+                                    Text("REST")
+                                        .font(Theme.Font.label(9))
+                                        .tracking(1.0)
+                                        .foregroundStyle(Theme.textMuted)
+                                }
+                            }
+                            .overlay {
                                 if day.isToday {
                                     RoundedRectangle(cornerRadius: Theme.Radius.chip, style: .continuous)
                                         .strokeBorder(
@@ -325,11 +334,6 @@ private struct WeekStrip: View {
                                                 ? StrokeStyle(lineWidth: 1.5)
                                                 : StrokeStyle(lineWidth: 1.5, dash: [3, 3])
                                         )
-                                } else if !day.trained && day.hasPriorWorkout {
-                                    Text("REST")
-                                        .font(Theme.Font.label(9))
-                                        .tracking(1.0)
-                                        .foregroundStyle(Theme.textMuted)
                                 }
                             }
                     }

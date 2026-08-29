@@ -13,6 +13,8 @@ struct HistoryView: View {
     @State private var selectedExercise: Exercise?
     @State private var trendLogs: [ExerciseLog] = []
     @State private var personalRecordDates: [PersistentIdentifier: Date] = [:]
+    @State private var editingSession: WorkoutSession?
+    @State private var showAddSheet = false
 
     private var unit: MeasurementUnit { settingsList.first?.unit ?? .lb }
 
@@ -26,23 +28,29 @@ struct HistoryView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                Text("History")
-                    .font(Theme.Font.display(34))
-                    .foregroundStyle(Theme.textPrimary)
-                    .padding(.horizontal, Theme.Space.screen)
-                    .padding(.top, 14)
+        ZStack(alignment: .bottomTrailing) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("History")
+                        .font(Theme.Font.display(34))
+                        .foregroundStyle(Theme.textPrimary)
+                        .padding(.horizontal, Theme.Space.screen)
+                        .padding(.top, 14)
 
-                trendCard
-                    .padding(.top, 22)
-                    .padding(.horizontal, Theme.Space.screen)
+                    trendCard
+                        .padding(.top, 22)
+                        .padding(.horizontal, Theme.Space.screen)
 
-                ForEach(sessionsByMonth, id: \.month) { group in
-                    monthGroup(group)
+                    ForEach(sessionsByMonth, id: \.month) { group in
+                        monthGroup(group)
+                    }
                 }
+                .padding(.bottom, 24)
             }
-            .padding(.bottom, 24)
+
+            addButton
+                .padding(.trailing, Theme.Space.screen)
+                .padding(.bottom, 24)
         }
         .background(Theme.canvas)
         .toolbar(.hidden, for: .navigationBar)
@@ -51,6 +59,27 @@ struct HistoryView: View {
             loadPersonalRecordDates()
         }
         .onChange(of: selectedExercise) { _, _ in Task { await loadTrend() } }
+        .sheet(item: $editingSession) { session in
+            NavigationStack { ManualWorkoutEntryView(existingSession: session) }
+        }
+        .sheet(isPresented: $showAddSheet) {
+            NavigationStack { ManualWorkoutEntryView(existingSession: nil) }
+        }
+    }
+
+    private var addButton: some View {
+        Button {
+            showAddSheet = true
+        } label: {
+            Image(systemName: "plus")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundStyle(Theme.accentInk)
+                .frame(width: 54, height: 54)
+                .background(Theme.accent, in: Circle())
+                .shadow(color: .black.opacity(0.18), radius: 10, y: 4)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Log past workout")
     }
 
     private func monthGroup(_ group: (month: String, sessions: [WorkoutSession])) -> some View {
@@ -58,12 +87,30 @@ struct HistoryView: View {
             MetaLabel(text: group.month).tracking(1.6)
                 .padding(.bottom, 10)
             ForEach(group.sessions) { session in
-                NavigationLink {
-                    SessionDetailView(session: session)
-                } label: {
-                    SessionRow(session: session, isPersonalRecord: isPersonalRecord(session), unit: unit)
+                HStack(spacing: 8) {
+                    NavigationLink {
+                        SessionDetailView(session: session)
+                    } label: {
+                        SessionRow(session: session, isPersonalRecord: isPersonalRecord(session), unit: unit)
+                    }
+                    .buttonStyle(.plain)
+
+                    Button {
+                        editingSession = session
+                    } label: {
+                        Image(systemName: "pencil")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(Theme.textMuted)
+                            .frame(width: 34, height: 34)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .stroke(Theme.borderStrong, lineWidth: 1)
+                            )
+                            .contentShape(Rectangle().inset(by: -5))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Edit workout")
                 }
-                .buttonStyle(.plain)
             }
         }
         .padding(.top, 22)
