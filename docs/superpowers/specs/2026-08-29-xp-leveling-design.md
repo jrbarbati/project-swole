@@ -7,7 +7,7 @@ No positive feedback loop tied to *finishing* workouts, hitting PRs, or training
 ## Requirements
 
 - XP starts fresh at zero for everyone at launch — no backfill of past history.
-- Award XP at the single existing `finishWorkout` choke point (`SwoleData/Sources/SwoleData/WorkoutSessionService.swift`).
+- Award XP at the `finishWorkout` choke point (`SwoleData/Sources/SwoleData/WorkoutSessionService.swift`) — the path every *live* workout goes through. (`ManualWorkoutEntryView` also creates already-finished `WorkoutSession`s directly, bypassing `finishWorkout` entirely; see Out of scope.)
 - A workout can award a PR bonus per exercise that hit a new PR in that session (not capped at one).
 - A PR only counts if the exercise has at least one prior *finished* session — the first-ever log of an exercise is a baseline, not a PR.
 - The "3 workouts this week" bonus fires exactly once per calendar week, on the session that brings the week's finished-workout count to 3 (not on the 4th, 5th, ...).
@@ -35,7 +35,7 @@ public final class GamificationState {
 }
 ```
 
-Add `GamificationState.self` to `swoleSchema` in `Schema.swift`. Seeded alongside `UserSettings` (in `StandardSeed.swift`, same place `UserSettings` is first created) so `finishWorkout` can always assume it exists.
+Add `GamificationState.self` to `swoleSchema` in `Schema.swift`. Seeded alongside `UserSettings` (in `StandardSeed.swift`, same place `UserSettings` is first created) — but `StandardSeed.seed` early-returns on any store that already has exercises, so this only creates the row on a brand-new install. Every existing install (any store seeded before this feature shipped) would never get the row through seeding alone. `awardXP` must not assume the row exists — it must create it lazily (check-then-insert) the first time a workout finishes on such a store, so the feature activates itself on upgrade rather than silently never running.
 
 ### XPCalculator (pure, testable — mirrors StatsCalculator style)
 
@@ -102,7 +102,13 @@ public static func finishWorkout(_ session: WorkoutSession, in context: ModelCon
 }
 
 private static func awardXP(for session: WorkoutSession, in context: ModelContext) throws {
-    guard let state = try context.fetch(FetchDescriptor<GamificationState>()).first else { return }
+    let state: GamificationState
+    if let existing = try context.fetch(FetchDescriptor<GamificationState>()).first {
+        state = existing
+    } else {
+        state = GamificationState(totalXP: 0)
+        context.insert(state)
+    }
 
     var xp = XPCalculator.workoutXP
 
@@ -139,10 +145,12 @@ private static func awardXP(for session: WorkoutSession, in context: ModelContex
 
 - `XPCalculator`: `xpForLevel` boundary values, cap behavior (level well past 13 still returns 2500), `level(forXP:)` and `progress(forXP:)` at exact level-boundary XP values and mid-level values.
 - `WorkoutSessionServiceTests` (extend existing finish-workout coverage): finishing a workout with no PRs and not the 3rd of the week awards exactly `workoutXP`; a session with 2 PR exercises awards `workoutXP + 2 * prBonusXP`; the very first finished session for a brand-new exercise awards no PR bonus; the 3rd finished session in a calendar week awards the weekly bonus, the 4th does not.
-- Manual: finish workouts in the simulator, confirm the TodayView level/XP bar updates and matches expected math.
+- `WorkoutSessionServiceTests`: `finishWorkout` creates `GamificationState` on the fly and still awards XP if the row is missing (covers the upgrade path on a pre-existing store); finishing several workouts in a row and reading `GamificationState.totalXP` through `XPCalculator.progress(forXP:)` produces the expected level/current/needed tuple end to end.
+- Manual: finish workouts in the simulator, confirm the TodayView level/XP bar updates and matches expected math — run this against a store that already has workout history (not just a fresh seed), since that's the path the missing-row fix targets.
 
 ## Out of scope
 
 - Backfilling XP for existing workout history.
 - History/detail screen for past XP awards, toast/animation on level-up.
 - Titles or cosmetic rewards per level — just the number and progress bar for v1.
+- Reconciling manually-entered workouts (`ManualWorkoutEntryView`) with the weekly bonus: those sessions are created already-finished, bypass `finishWorkout` entirely, and so never award XP themselves — but they still count toward `isThirdWorkoutThisWeek`'s tally of finished sessions in the week (it counts all finished sessions, not just XP-awarding ones). A week mixing manual and live entries can therefore make the weekly bonus fire earlier than the 3rd *live* workout, or — if manual entries alone push the week's count past 3 before any live workout finishes — never fire that week at all, since the check requires the count to be exactly 2 at award time. Known limitation, not fixed here.
