@@ -12,6 +12,7 @@ struct TodayView: View {
     private var finishedSessions: [WorkoutSession]
 
     @State private var startError: String?
+    @State private var weightAdjustments: [PersistentIdentifier: Double] = [:]
 
     private var settings: UserSettings? { settingsList.first }
 
@@ -51,9 +52,12 @@ struct TodayView: View {
                     .padding(.bottom, 10)
             }
 
-            startButton
-                .padding(.horizontal, Theme.Space.screen)
-                .padding(.bottom, 12)
+            HStack(spacing: 12) {
+                startButton
+                swapWorkoutButton
+            }
+            .padding(.horizontal, Theme.Space.screen)
+            .padding(.bottom, 12)
         }
         .background(Theme.canvas)
         .toolbar(.hidden, for: .navigationBar)
@@ -67,8 +71,10 @@ struct TodayView: View {
                         exercise: exercise,
                         config: config,
                         unit: settings?.unit ?? .lb,
-                        targetWeight: targetWeight(for: exercise, config: config),
-                        failStreak: failStreak(for: exercise)
+                        targetWeight: displayWeight(for: exercise, config: config),
+                        delta: displayWeight(for: exercise, config: config) - baselineWeight(for: exercise, config: config),
+                        onDecrement: { adjustWeight(for: exercise, config: config, by: -config.weightIncrement) },
+                        onIncrement: { adjustWeight(for: exercise, config: config, by: config.weightIncrement) }
                     )
                 }
             }
@@ -108,6 +114,26 @@ struct TodayView: View {
         .padding(.horizontal, Theme.Space.screen)
     }
 
+    /// Flips which workout comes up next by writing the opposite of it as
+    /// `lastCompletedWorkoutType` — WorkoutScheduler derives `next` from that.
+    private var swapWorkoutButton: some View {
+        Button {
+            swapWorkout()
+        } label: {
+            Image(systemName: "arrow.triangle.2.circlepath")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(Theme.textMuted)
+                .frame(width: 34, height: 34)
+                .overlay(
+                    Circle().stroke(Theme.borderStrong, lineWidth: 1)
+                )
+                .contentShape(Rectangle().inset(by: -5))
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("swapWorkoutButton")
+        .disabled(settings == nil)
+    }
+
     /// Copy under the lift list explaining a hold, e.g. "ROW HELD — 2 MISSES AT 110".
     private var holdNote: String? {
         for entry in nextEntries {
@@ -131,16 +157,42 @@ struct TodayView: View {
             ?? config.startingWeight
     }
 
+    /// The weight to show for this exercise: a pending local adjustment if
+    /// the user has tapped −/+, otherwise the calculated plan.
+    private func displayWeight(for exercise: Exercise, config: UserExerciseConfig) -> Double {
+        weightAdjustments[exercise.persistentModelID] ?? targetWeight(for: exercise, config: config)
+    }
+
+    /// What the delta below the weight is measured against: the last
+    /// actually-completed weight for this lift, or its starting weight if
+    /// it's never been logged.
+    private func baselineWeight(for exercise: Exercise, config: UserExerciseConfig) -> Double {
+        (try? ProgressionCalculator.lastCompletedWeight(for: exercise, in: modelContext))
+            ?? config.startingWeight
+    }
+
+    private func adjustWeight(for exercise: Exercise, config: UserExerciseConfig, by delta: Double) {
+        let current = displayWeight(for: exercise, config: config)
+        weightAdjustments[exercise.persistentModelID] = max(0, current + delta)
+    }
+
     private func failStreak(for exercise: Exercise) -> Int {
         (try? ProgressionCalculator.currentFailStreak(for: exercise, in: modelContext)) ?? 0
     }
 
     private func startWorkout() {
         do {
-            _ = try WorkoutSessionService.startWorkout(in: modelContext)
+            _ = try WorkoutSessionService.startWorkout(in: modelContext, weightOverrides: weightAdjustments)
         } catch {
             startError = "Couldn't start workout: \(error.localizedDescription)"
         }
+    }
+
+    private func swapWorkout() {
+        guard let settings else { return }
+        settings.lastCompletedWorkoutType = nextWorkoutType
+        weightAdjustments = [:]
+        try? modelContext.save()
     }
 }
 
@@ -151,7 +203,9 @@ private struct NextLiftRow: View {
     let config: UserExerciseConfig
     let unit: MeasurementUnit
     let targetWeight: Double
-    let failStreak: Int
+    let delta: Double
+    let onDecrement: () -> Void
+    let onIncrement: () -> Void
 
     private var plates: PlateMath {
         PlateCalculator.plates(
@@ -161,11 +215,15 @@ private struct NextLiftRow: View {
         )
     }
 
-    /// "+5" when progressing, "HOLD" when repeating the weight, "DELOAD" on a drop.
+    /// "+N" ahead of last completed weight, "−N" behind it, "HOLD" if unchanged.
     private var deltaLabel: (text: String, color: Color) {
-        if failStreak >= config.deloadThreshold { return ("DELOAD", Theme.warn) }
-        if failStreak > 0 { return ("HOLD", Theme.textMuted) }
-        return ("+\(config.weightIncrement.formatted())", Theme.accentText)
+        if delta == 0 {
+            return ("HOLD", Theme.textMuted)
+        }
+        if delta > 0 {
+            return ("+\(delta.formatted(.number.precision(.fractionLength(0...1))))", Theme.accentText)
+        }
+        return ("−\(abs(delta).formatted(.number.precision(.fractionLength(0...1))))", Theme.warn)
     }
 
     var body: some View {
@@ -175,19 +233,25 @@ private struct NextLiftRow: View {
                     .font(Theme.Font.title(19))
                     .foregroundStyle(Theme.textPrimary)
                 MetaLabel(
-                    text: "\(config.setCount) × \(config.repsPerSet) · \(plates.shortDescription) per side",
+                    text: "\(config.setCount) × \(config.repsPerSet) · \(plates.shortDescription) \(!plates.perSide.isEmpty ? "per side" : "")",
                     color: Theme.textDim
                 )
                 .tracking(1.2)
             }
             Spacer()
-            VStack(alignment: .trailing, spacing: 3) {
-                Text(targetWeight.formatted(.number.precision(.fractionLength(0...1))))
-                    .font(Theme.Font.numeric(24))
-                    .foregroundStyle(Theme.textPrimary)
-                Text(deltaLabel.text)
-                    .font(Theme.Font.label())
-                    .foregroundStyle(deltaLabel.color)
+            HStack(spacing: 10) {
+                StepButton(symbol: "−", action: onDecrement)
+                    .accessibilityIdentifier("weightDecrement-\(exercise.name)")
+                VStack(alignment: .trailing, spacing: 3) {
+                    Text(targetWeight.formatted(.number.precision(.fractionLength(0...1))))
+                        .font(Theme.Font.numeric(24))
+                        .foregroundStyle(Theme.textPrimary)
+                    Text(deltaLabel.text)
+                        .font(Theme.Font.label())
+                        .foregroundStyle(deltaLabel.color)
+                }
+                StepButton(symbol: "+", action: onIncrement)
+                    .accessibilityIdentifier("weightIncrement-\(exercise.name)")
             }
         }
         .padding(.vertical, 16)

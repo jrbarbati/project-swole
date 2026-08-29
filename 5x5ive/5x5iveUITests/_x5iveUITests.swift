@@ -106,6 +106,7 @@ final class _x5iveUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["+5"].waitForExistence(timeout: 5))
 
         // Swapping the planned workout discards the pending adjustment.
+        // One swap moves to Workout B; a second moves back to Workout A, where Squat lives.
         app.buttons["swapWorkoutButton"].tap()
         app.buttons["swapWorkoutButton"].tap()
 
