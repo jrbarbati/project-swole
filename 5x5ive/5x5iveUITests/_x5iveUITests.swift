@@ -126,4 +126,26 @@ final class _x5iveUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Workout A"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["50"].waitForExistence(timeout: 5))
     }
+
+    @MainActor
+    func testStartingAWorkoutClearsThePendingAdjustmentAfterwards() throws {
+        let app = launchApp()
+
+        app.buttons["weightIncrement-Squat"].tap()
+        XCTAssertTrue(app.staticTexts["50"].waitForExistence(timeout: 5))
+
+        app.buttons["Start Workout A"].tap()
+        XCTAssertTrue(app.staticTexts["Workout A"].waitForExistence(timeout: 5))
+
+        app.buttons["Cancel"].tap()
+        let alert = app.alerts["Cancel this workout?"]
+        XCTAssertTrue(alert.waitForExistence(timeout: 5))
+        alert.buttons["Delete Workout"].tap()
+
+        // Back on Today: the adjustment used to start that (now-canceled)
+        // workout must not still be applied — Squat should show its plain
+        // computed weight again, not the stale 50 from before.
+        XCTAssertTrue(app.buttons["Start Workout A"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["45"].waitForExistence(timeout: 5))
+    }
 }

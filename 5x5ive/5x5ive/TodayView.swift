@@ -184,6 +184,7 @@ struct TodayView: View {
     private func startWorkout() {
         do {
             _ = try WorkoutSessionService.startWorkout(in: modelContext, weightOverrides: weightAdjustments)
+            weightAdjustments = [:]
         } catch {
             startError = "Couldn't start workout: \(error.localizedDescription)"
         }
