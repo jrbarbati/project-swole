@@ -271,7 +271,7 @@ private struct NextLiftRow: View {
                     .font(Theme.Font.title(19))
                     .foregroundStyle(Theme.textPrimary)
                 MetaLabel(
-                    text: "\(config.setCount) × \(config.repsPerSet) · \(plates.shortDescription) \(!plates.perSide.isEmpty ? "per side" : "")",
+                    text: "\(config.setCount) × \(config.repsPerSet) · \(plates.shortDescription) \(plates.perSide.isEmpty ? "" : "per side")",
                     color: Theme.textDim
                 )
                 .tracking(1.2)

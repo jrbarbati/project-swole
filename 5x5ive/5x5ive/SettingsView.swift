@@ -13,6 +13,9 @@ struct SettingsView: View {
 
     @State private var selectedConfigID: PersistentIdentifier?
     @State private var showDeleteConfirmation = false
+    #if canImport(HealthKit) && os(iOS)
+    @State private var healthStatus: HealthKitManager.ConnectionStatus = .notDetermined
+    #endif
 
     private var settings: UserSettings? { settingsList.first }
 
@@ -38,6 +41,7 @@ struct SettingsView: View {
                 workingWeightsSection
                 restSection
                 preferencesSection
+                healthSection
                 dangerSection
             }
             .padding(.horizontal, Theme.Space.screen)
@@ -57,6 +61,43 @@ struct SettingsView: View {
             Text("This permanently deletes all workout history and resets your level and settings. This can't be undone.")
         }
     }
+
+    #if canImport(HealthKit) && os(iOS)
+    private var healthSection: some View {
+        SettingsSection(title: "Health") {
+            VStack(alignment: .leading, spacing: 4) {
+                Button {
+                    Task {
+                        await HealthKitManager.shared.requestAuthorization()
+                        healthStatus = HealthKitManager.shared.connectionStatus
+                    }
+                } label: {
+                    HStack {
+                        Text(healthStatus == .connected ? "Connected to Apple Health" : "Connect to Apple Health")
+                            .font(Theme.Font.body(16))
+                            .foregroundStyle(Theme.textPrimary)
+                        Spacer()
+                        if healthStatus == .connected {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(Theme.accentText)
+                        }
+                    }
+                    .padding(.vertical, 10)
+                }
+                .buttonStyle(.plain)
+
+                if healthStatus == .denied {
+                    MetaLabel(text: "Denied — enable in iOS Settings › Health › Data Access & Devices", color: Theme.textDim)
+                        .tracking(1.2)
+                        .padding(.bottom, 6)
+                }
+            }
+        }
+        .onAppear { healthStatus = HealthKitManager.shared.connectionStatus }
+    }
+    #else
+    private var healthSection: some View { EmptyView() }
+    #endif
 
     private var dangerSection: some View {
         SettingsSection(title: "Danger zone") {

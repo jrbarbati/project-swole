@@ -172,8 +172,7 @@ struct ExerciseCard: View {
     @MainActor
     private func loadLastSession() async {
         guard lastSessionSummary == nil, let exercise = log.exercise else { return }
-        let previous = try? ProgressionCalculator.previousLog(for: exercise, before: log)
-        if let previous {
+        if let previous = try? ProgressionCalculator.previousLog(for: exercise, before: log) {
             lastSessionSummary = "Last \(unit.fromLb(previous.targetWeight).formattedWeight) · \(previous.repsSummary)"
         } else {
             lastSessionSummary = "First time at this lift"

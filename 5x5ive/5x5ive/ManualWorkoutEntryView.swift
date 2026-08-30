@@ -181,8 +181,7 @@ struct ManualWorkoutEntryView: View {
     }
 
     private func repPickerSheet(for target: RepPickerTarget) -> some View {
-        let entryIndex = entries.firstIndex { $0.id == target.entryID }
-        let entry = entryIndex.map { entries[$0] }
+        let entry = entries.first { $0.id == target.entryID }
         return RepPickerSheet(
             exerciseName: entry?.exerciseName ?? "",
             setNumber: target.setIndex + 1,

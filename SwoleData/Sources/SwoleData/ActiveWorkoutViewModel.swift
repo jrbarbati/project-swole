@@ -206,7 +206,7 @@ public extension ExerciseLog {
     var loggedSetCount: Int { sets.filter { $0.repsCompleted != nil }.count }
 
     var volume: Double {
-        sortedSets.reduce(0) { $0 + Double($1.repsCompleted ?? 0) * targetWeight }
+        sets.reduce(0) { $0 + Double($1.repsCompleted ?? 0) * targetWeight }
     }
 }
 

@@ -99,8 +99,8 @@ public enum WorkoutSessionService {
         }
         session.finishedAt = .now
 
-        let allSettings = try context.fetch(FetchDescriptor<UserSettings>())
-        allSettings.first?.lastCompletedWorkoutType = session.workoutType
+        let settings = try context.fetch(FetchDescriptor<UserSettings>()).first
+        settings?.lastCompletedWorkoutType = session.workoutType
 
         let award = try awardXP(for: session, in: context)
 
@@ -124,6 +124,7 @@ public enum WorkoutSessionService {
         let isPerfect = !session.exerciseLogs.isEmpty && session.exerciseLogs.allSatisfy(\.succeeded)
         let perfectBonus = isPerfect ? XPCalculator.perfectBonusXP : 0
         let weeklyBonus = try isThirdFinishedWorkoutThisWeek(session, in: context) ? XPCalculator.weeklyBonusXP : 0
+        let earned = base + prBonus + perfectBonus + weeklyBonus
 
         let award = XPAward(
             base: base,
@@ -132,7 +133,7 @@ public enum WorkoutSessionService {
             perfectBonus: perfectBonus,
             weeklyBonus: weeklyBonus,
             xpBefore: xpBefore,
-            xpAfter: xpBefore + base + prBonus + perfectBonus + weeklyBonus
+            xpAfter: xpBefore + earned
         )
         state.totalXP = award.xpAfter
         return award

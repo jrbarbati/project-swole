@@ -72,9 +72,9 @@ struct StatsView: View {
 
     private func rangeLabel(_ range: StatsRange) -> String {
         switch range {
-        case .fourWeeks: return "4 WEEKS"
-        case .twelveWeeks: return "12 WEEKS"
-        case .all: return "ALL TIME"
+        case .fourWeeks: "4 WEEKS"
+        case .twelveWeeks: "12 WEEKS"
+        case .all: "ALL TIME"
         }
     }
 

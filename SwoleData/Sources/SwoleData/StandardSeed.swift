@@ -4,8 +4,7 @@ import SwiftData
 public enum StandardSeed {
     @discardableResult
     public static func seed(in context: ModelContext) throws -> Bool {
-        let existingExercises = try context.fetch(FetchDescriptor<Exercise>())
-        guard existingExercises.isEmpty else {
+        guard try context.fetch(FetchDescriptor<Exercise>()).isEmpty else {
             return false
         }
 

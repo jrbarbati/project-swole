@@ -111,11 +111,10 @@ struct SessionDetailView: View {
               streak > 0
         else { return nil }
 
-        let ordinal: String
-        switch streak {
-        case 1: ordinal = "1st"
-        case 2: ordinal = "2nd"
-        default: ordinal = "\(streak)th"
+        let ordinal: String = switch streak {
+        case 1: "1st"
+        case 2: "2nd"
+        default: "\(streak)th"
         }
 
         let remaining = config.deloadThreshold - streak

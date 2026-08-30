@@ -1,11 +1,3 @@
-//
-//  PlateCalculator.swift
-//  SwoleData
-//
-//  New in the redesign. Plate math is shown on every exercise card, so it
-//  belongs in the package (pure, testable) rather than in a view.
-//
-
 import Foundation
 
 public struct PlateMath: Equatable, Sendable {

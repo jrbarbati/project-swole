@@ -1,13 +1,7 @@
-//
-//  WarmupPlanner.swift
-//  SwoleData
-//
-//  Warmup sets themselves are always derived, never stored. Completion is
-//  persisted separately, on ExerciseLog.completedWarmupIDs.
-//
-
 import Foundation
 
+/// Warmup sets are always derived, never stored. Only completion is
+/// persisted, on `ExerciseLog.completedWarmupIDs`.
 public struct WarmupSet: Identifiable, Equatable, Sendable {
     public let id: Int
     public let weight: Double

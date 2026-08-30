@@ -19,9 +19,7 @@ public extension ProgressionCalculator {
     /// The most recent finished log for this exercise before `log`.
     /// Used for the "LAST 130 · 5 5 5 5 5" line on the exercise card.
     static func previousLog(for exercise: Exercise, before log: ExerciseLog) throws -> ExerciseLog? {
-        guard let context = log.modelContext else {
-            return nil
-        }
+        guard let context = log.modelContext else { return nil }
 
         let cutoff = log.session?.startedAt ?? .now
         let exerciseID = exercise.persistentModelID

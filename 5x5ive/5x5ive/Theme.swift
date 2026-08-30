@@ -113,7 +113,6 @@ enum Theme {
         static let card: CGFloat = 18
         static let tile: CGFloat = 12
         static let control: CGFloat = 14
-        static let sheet: CGFloat = 28
         static let chip: CGFloat = 7
     }
 

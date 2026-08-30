@@ -10,7 +10,7 @@ public enum ProgressionCalculator {
             .filter { $0.exercise?.persistentModelID == exerciseID }
             .sorted { ($0.session?.startedAt ?? .distantPast) > ($1.session?.startedAt ?? .distantPast) }
     }
-    
+
     public static func currentFailStreak(for exercise: Exercise, in context: ModelContext) throws -> Int {
         let logs = try sortedLogs(for: exercise, in: context)
         var streak = 0
