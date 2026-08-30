@@ -133,7 +133,7 @@ struct StatsView: View {
                     .frame(height: 76)
             }
 
-            exerciseFilterStrip
+            ExerciseFilterStrip(exercises: exercises, selectedExercise: $selectedExercise)
         }
     }
 
@@ -167,32 +167,6 @@ struct StatsView: View {
         .padding(.vertical, 10)
         .overlay(alignment: .bottom) {
             Rectangle().fill(Theme.hairline).frame(height: 1)
-        }
-    }
-
-    // Horizontal scroll keeps five lifts on one line at any Dynamic Type size.
-    private var exerciseFilterStrip: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 7) {
-                ForEach(exercises) { exercise in
-                    let isSelected = exercise == selectedExercise
-                    Button {
-                        selectedExercise = exercise
-                    } label: {
-                        Text(exercise.name.uppercased())
-                            .font(Theme.Font.label(10))
-                            .tracking(1)
-                            .foregroundStyle(isSelected ? Theme.textPrimary : Theme.textDim)
-                            .padding(.vertical, 6)
-                            .padding(.horizontal, 10)
-                            .background(
-                                isSelected ? Theme.surfaceSunken : .clear,
-                                in: RoundedRectangle(cornerRadius: Theme.Radius.chip, style: .continuous)
-                            )
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
         }
     }
 

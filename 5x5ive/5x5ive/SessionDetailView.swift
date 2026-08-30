@@ -111,11 +111,7 @@ struct SessionDetailView: View {
               streak > 0
         else { return nil }
 
-        let ordinal: String = switch streak {
-        case 1: "1st"
-        case 2: "2nd"
-        default: "\(streak)th"
-        }
+        let ordinal = "\(streak)\(streak.ordinalSuffix)"
 
         let remaining = config.deloadThreshold - streak
         let displayWeight = unit.fromLb(log.targetWeight).formattedWeight

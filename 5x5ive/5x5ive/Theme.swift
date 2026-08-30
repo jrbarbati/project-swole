@@ -1,4 +1,5 @@
 import SwiftUI
+import SwoleData
 
 extension UIColor {
     convenience init(rgb: UInt32) {
@@ -25,6 +26,18 @@ extension Double {
     /// conversion produces long decimals that would otherwise leak through.
     var formattedWeight: String {
         formatted(.number.precision(.fractionLength(0...1)))
+    }
+}
+
+extension Int {
+    /// English ordinal suffix, e.g. 1 -> "st", 3 -> "rd", 11 -> "th", 21 -> "st".
+    var ordinalSuffix: String {
+        switch self % 10 {
+        case 1 where self % 100 != 11: "st"
+        case 2 where self % 100 != 12: "nd"
+        case 3 where self % 100 != 13: "rd"
+        default: "th"
+        }
     }
 }
 
@@ -130,5 +143,36 @@ struct MetaLabel: View {
             .font(Theme.Font.label())
             .tracking(1.4)
             .foregroundStyle(color)
+    }
+}
+
+/// Horizontal scroll keeps five lifts on one line at any Dynamic Type size.
+struct ExerciseFilterStrip: View {
+    let exercises: [Exercise]
+    @Binding var selectedExercise: Exercise?
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 7) {
+                ForEach(exercises) { exercise in
+                    let isSelected = exercise == selectedExercise
+                    Button {
+                        selectedExercise = exercise
+                    } label: {
+                        Text(exercise.name.uppercased())
+                            .font(Theme.Font.label(10))
+                            .tracking(1)
+                            .foregroundStyle(isSelected ? Theme.textPrimary : Theme.textDim)
+                            .padding(.vertical, 6)
+                            .padding(.horizontal, 10)
+                            .background(
+                                isSelected ? Theme.surfaceSunken : .clear,
+                                in: RoundedRectangle(cornerRadius: Theme.Radius.chip, style: .continuous)
+                            )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
     }
 }

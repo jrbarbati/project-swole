@@ -19,12 +19,17 @@ struct HistoryView: View {
     private var unit: MeasurementUnit { settingsList.first?.unit ?? .lb }
 
     private var sessionsByMonth: [(month: String, sessions: [WorkoutSession])] {
+        let calendar = Calendar.current
+        let currentYear = calendar.component(.year, from: .now)
+        let groups = Dictionary(grouping: sessions) { calendar.dateComponents([.year, .month], from: $0.startedAt) }
         let formatter = DateFormatter()
-        formatter.dateFormat = "MMMM"
-        let groups = Dictionary(grouping: sessions) { formatter.string(from: $0.startedAt) }
         return groups
             .sorted { ($0.value.first?.startedAt ?? .distantPast) > ($1.value.first?.startedAt ?? .distantPast) }
-            .map { ($0.key, $0.value) }
+            .map { _, sessions in
+                let date = sessions.first?.startedAt ?? .distantPast
+                formatter.dateFormat = calendar.component(.year, from: date) == currentYear ? "MMMM" : "MMMM yyyy"
+                return (formatter.string(from: date), sessions)
+            }
     }
 
     var body: some View {
@@ -134,7 +139,7 @@ struct HistoryView: View {
             )
             .frame(height: 76)
 
-            exerciseFilterStrip
+            ExerciseFilterStrip(exercises: exercises, selectedExercise: $selectedExercise)
         }
         .padding(18)
         .background(Theme.surface, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
@@ -142,32 +147,6 @@ struct HistoryView: View {
             RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .stroke(Theme.border, lineWidth: 1)
         )
-    }
-
-    // Horizontal scroll keeps five lifts on one line at any Dynamic Type size.
-    private var exerciseFilterStrip: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 7) {
-                ForEach(exercises) { exercise in
-                    let isSelected = exercise == selectedExercise
-                    Button {
-                        selectedExercise = exercise
-                    } label: {
-                        Text(exercise.name.uppercased())
-                            .font(Theme.Font.label(10))
-                            .tracking(1)
-                            .foregroundStyle(isSelected ? Theme.textPrimary : Theme.textDim)
-                            .padding(.vertical, 6)
-                            .padding(.horizontal, 10)
-                            .background(
-                                isSelected ? Theme.surfaceSunken : .clear,
-                                in: RoundedRectangle(cornerRadius: Theme.Radius.chip, style: .continuous)
-                            )
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-        }
     }
 
     private func isPersonalRecord(_ session: WorkoutSession) -> Bool {

@@ -143,7 +143,7 @@ struct WorkoutSummaryView: View {
             let deloaded = (log.targetWeight * (1 - config.deloadPercentage) / config.weightIncrement)
                 .rounded(.down) * config.weightIncrement
             return SummaryOutcome(
-                headline: "\(streak)\(ordinalSuffix(streak)) miss",
+                headline: "\(streak)\(streak.ordinalSuffix) miss",
                 detail: "Deload \(unit.fromLb(deloaded).formattedWeight)",
                 color: Theme.warn
             )
@@ -154,15 +154,6 @@ struct WorkoutSummaryView: View {
             detail: "Hold \(unit.fromLb(log.targetWeight).formattedWeight)",
             color: Theme.miss
         )
-    }
-
-    private func ordinalSuffix(_ value: Int) -> String {
-        switch value % 10 {
-        case 1 where value % 100 != 11: "st"
-        case 2 where value % 100 != 12: "nd"
-        case 3 where value % 100 != 13: "rd"
-        default: "th"
-        }
     }
 }
 
