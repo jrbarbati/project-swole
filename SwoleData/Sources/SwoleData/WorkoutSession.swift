@@ -8,6 +8,12 @@ public final class WorkoutSession {
     public var workoutType: WorkoutType
     public var finishedAt: Date?
     public var note: String?
+    /// Start of the currently-running rest window, if any. Mirrors
+    /// `ActiveWorkoutViewModel.ActiveRest` so rest state survives
+    /// `ActiveWorkoutView` being dismissed and is readable from `RootView`.
+    public var restStartDate: Date?
+    public var restEndDate: Date?
+    public var restLabel: String?
     @Relationship(deleteRule: .cascade, inverse: \ExerciseLog.session)
     public var exerciseLogs: [ExerciseLog] = []
 
