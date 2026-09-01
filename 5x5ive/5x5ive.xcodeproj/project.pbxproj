@@ -8,7 +8,9 @@
 
 /* Begin PBXBuildFile section */
 		0417607C30400F6800ACCEDC /* SwoleData in Frameworks */ = {isa = PBXBuildFile; productRef = 0417607B30400F6800ACCEDC /* SwoleData */; };
+		3CC3D1FA49B725E83C7BE5AD /* WorkoutActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19A72A81782FF95AF96F0421 /* WorkoutActivityAttributes.swift */; };
 		55863A52B06D450F1263ED0E /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 43610D62625862EDF8768C51 /* Foundation.framework */; };
+		74A5B0668FE1677A2815BA26 /* WorkoutActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19A72A81782FF95AF96F0421 /* WorkoutActivityAttributes.swift */; };
 		79DF344906313C743A54899A /* 5x5iveWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 5FC71986DFEA6EE70A28C796 /* 5x5iveWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		86C4C3252665C16AE8F87EE6 /* FiveByFiveWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AFFBA50784DAD44A95E2F1E /* FiveByFiveWidgetBundle.swift */; };
 /* End PBXBuildFile section */
@@ -55,6 +57,7 @@
 		0417604D303FFE2C00ACCEDC /* 5x5ive.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = 5x5ive.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0417605C303FFE2D00ACCEDC /* 5x5iveTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = 5x5iveTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		04176066303FFE2D00ACCEDC /* 5x5iveUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = 5x5iveUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		19A72A81782FF95AF96F0421 /* WorkoutActivityAttributes.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutActivityAttributes.swift; sourceTree = "<group>"; };
 		26D4CB7F071D15349694A978 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		43610D62625862EDF8768C51 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		4AFFBA50784DAD44A95E2F1E /* FiveByFiveWidgetBundle.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FiveByFiveWidgetBundle.swift; sourceTree = "<group>"; };
@@ -163,8 +166,8 @@
 			children = (
 				4AFFBA50784DAD44A95E2F1E /* FiveByFiveWidgetBundle.swift */,
 				26D4CB7F071D15349694A978 /* Info.plist */,
+				19A72A81782FF95AF96F0421 /* WorkoutActivityAttributes.swift */,
 			);
-			name = 5x5iveWidget;
 			path = 5x5iveWidget;
 			sourceTree = "<group>";
 		};
@@ -339,6 +342,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				74A5B0668FE1677A2815BA26 /* WorkoutActivityAttributes.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -361,6 +365,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				86C4C3252665C16AE8F87EE6 /* FiveByFiveWidgetBundle.swift in Sources */,
+				3CC3D1FA49B725E83C7BE5AD /* WorkoutActivityAttributes.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
