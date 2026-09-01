@@ -50,13 +50,22 @@ struct ActiveWorkoutView: View {
         .onAppear {
             viewModel.focusFirstIncomplete(in: logs)
             restoreOrClearPersistedRest()
+            if let state = currentActivityState() {
+                LiveActivityManager.shared.startIfNeeded(workoutTypeRawValue: session.workoutType.rawValue, state: state)
+            }
         }
         .onChange(of: viewModel.activeRest) { _, newValue in
             syncRestToSession(newValue)
+            if let state = currentActivityState() {
+                LiveActivityManager.shared.update(state: state)
+            }
         }
         .onChange(of: viewModel.completion?.logID) { _, _ in
             // Auto-advance: focus moves as soon as an exercise finishes.
             withAnimation(.snappy) { viewModel.focusFirstIncomplete(in: logs) }
+            if let state = currentActivityState() {
+                LiveActivityManager.shared.update(state: state)
+            }
         }
         .sheet(item: $detailLog) { log in detailSheet(for: log) }
         .sheet(item: $repPickerTarget) { target in repPickerSheet(for: target) }
@@ -258,12 +267,36 @@ struct ActiveWorkoutView: View {
         let end = session.finishedAt ?? .now
         Task { await HealthKitManager.shared.saveWorkout(start: start, end: end) }
         #endif
+        LiveActivityManager.shared.end()
         return award
     }
 
     private func cancel() {
         try? WorkoutSessionService.cancelWorkout(session, in: modelContext)
+        LiveActivityManager.shared.end()
         dismiss()
+    }
+
+    /// Builds the Live Activity's content state from current view state.
+    /// "Current exercise" is whichever log is focused (falls back to the
+    /// first log if none is, matching `focusFirstIncomplete`'s own
+    /// fallback); "next" is the log immediately after it by `order`.
+    private func currentActivityState() -> WorkoutActivityAttributes.ContentState? {
+        // `logs` (= `session.sortedLogs`) is already sorted by `order`.
+        guard let currentLog = logs.first(where: { $0.persistentModelID == viewModel.expandedLogID }) ?? logs.first else {
+            return nil
+        }
+        let nextLog = logs.first { $0.order > currentLog.order }
+        let rest = viewModel.activeRest
+
+        return WorkoutActivityAttributes.ContentState(
+            currentExerciseName: currentLog.exercise?.name ?? "",
+            completedSets: currentLog.loggedSetCount,
+            totalSets: currentLog.sets.count,
+            nextExerciseName: nextLog?.exercise?.name,
+            restStartDate: rest?.startDate,
+            restEndDate: rest?.endDate
+        )
     }
 
     /// Reconstructs a still-running rest countdown when re-opening a
