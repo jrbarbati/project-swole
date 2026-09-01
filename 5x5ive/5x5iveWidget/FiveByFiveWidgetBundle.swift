@@ -4,7 +4,7 @@ import SwiftUI
 @main
 struct FiveByFiveWidgetBundle: WidgetBundle {
     var body: some Widget {
-        PlaceholderWidget()
+        WorkoutLiveActivityWidget()
     }
 }
 
