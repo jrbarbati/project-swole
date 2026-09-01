@@ -59,12 +59,21 @@ something this spec can fully pin down outside Xcode — the plan should
 call out "create the target" as its own early step so a build failure
 there doesn't get conflated with a code failure.
 
-The new target links against the existing `SwoleData` Swift package (an
-SPM package can be shared by multiple targets in one project) so both
-processes — the main app and the widget extension — use one shared
-attributes type without duplicating it.
+**Correction found during planning:** `SwoleData`'s `Package.swift`
+declares `.macOS(.v14)` as a supported platform (that's what lets
+`swift test` run locally on this dev machine) — but `ActivityKit` does
+not exist on macOS at all. So `WorkoutActivityAttributes` cannot live in
+`SwoleData`: the import would break `swift test` for the whole package.
+This matches the existing precedent in this repo — `HealthKitManager` is
+also framework-specific and deliberately lives in the app target, not
+`SwoleData`, for the same reason. Instead, `WorkoutActivityAttributes` is
+a small file added to both the app target and the new widget extension
+target directly via Xcode multi-target file membership (no new Swift
+package) — one shared type across the two processes, just via target
+membership rather than an SPM dependency. The new widget extension target
+does NOT link `SwoleData` at all.
 
-### 2. `WorkoutActivityAttributes` (SwoleData, new file)
+### 2. `WorkoutActivityAttributes` (shared file, app target + widget extension target)
 
 ```swift
 import ActivityKit
@@ -146,11 +155,12 @@ One `ActivityConfiguration<WorkoutActivityAttributes>` in a
 - **Dynamic Island — expanded:** the full banner content, laid out across
   the expanded regions.
 
-The extension imports only `WidgetKit`, `SwiftUI`, `ActivityKit`, and
-`SwoleData` (for `WorkoutActivityAttributes`) — never the app target,
-never SwiftData/`ModelContainer`. It is a pure renderer of whatever
-`ContentState` it's handed; all data-fetching happens in the main app
-process.
+The extension imports only `WidgetKit`, `SwiftUI`, and `ActivityKit` — it
+gets `WorkoutActivityAttributes` via the shared file's target membership,
+not an import. It never links `SwoleData`, never touches the app target,
+never imports SwiftData/`ModelContainer`. It is a pure renderer of
+whatever `ContentState` it's handed; all data-fetching happens in the
+main app process.
 
 ## Data flow / lifecycle
 
@@ -201,9 +211,13 @@ All trigger points live in the app target, alongside the existing
 
 ## Testing
 
-- **SwoleData (`swift test`):** `WorkoutActivityAttributes.ContentState`
-  is plain data — construction and `Equatable`/`Hashable` behavior get a
-  straightforward unit test, no simulator needed.
+- **`WorkoutActivityAttributes.ContentState`:** plain data, but it lives
+  outside `SwoleData` (see the platform-availability correction above),
+  so it isn't covered by `swift test`. Its construction/equality gets a
+  quick XCTest in the app target's test bundle instead (no `ActivityKit`
+  behavior to test, just the struct's own `Equatable`/`Hashable`
+  synthesis) — cheap, and keeps at least one automated check on it
+  outside manual verification.
 - **`LiveActivityManager`:** no dedicated unit test, consistent with the
   existing `NotificationManager`/`HealthKitManager` precedent — it's a
   thin, unmockable wrapper around a system framework whose only
