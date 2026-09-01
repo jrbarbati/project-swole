@@ -341,4 +341,66 @@ final class _x5iveUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["settingsWeight-Squat"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.exists)
     }
+
+    // MARK: - Active workout mini bar
+
+    @MainActor
+    func testMinimizingAnActiveWorkoutShowsTheMiniBarWithARunningRestCountdown() throws {
+        let app = launchApp()
+
+        app.buttons["Start Workout A"].tap()
+        let firstSet = app.descendants(matching: .any)["Set 1"]
+        XCTAssertTrue(firstSet.waitForExistence(timeout: 5))
+        firstSet.tap()
+
+        // Debounced settle (1.5s) before rest starts — poll past it.
+        XCTAssertTrue(app.buttons["SKIP"].waitForExistence(timeout: 5))
+
+        app.buttons["minimizeWorkoutButton"].tap()
+
+        let bar = app.buttons["activeWorkoutBar"]
+        XCTAssertTrue(bar.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Start Workout A"].exists == false)
+    }
+
+    @MainActor
+    func testTappingTheMiniBarReopensTheActiveWorkoutWithRestStillRunning() throws {
+        let app = launchApp()
+
+        app.buttons["Start Workout A"].tap()
+        let firstSet = app.descendants(matching: .any)["Set 1"]
+        XCTAssertTrue(firstSet.waitForExistence(timeout: 5))
+        firstSet.tap()
+        XCTAssertTrue(app.buttons["SKIP"].waitForExistence(timeout: 5))
+
+        app.buttons["minimizeWorkoutButton"].tap()
+        let bar = app.buttons["activeWorkoutBar"]
+        XCTAssertTrue(bar.waitForExistence(timeout: 5))
+        bar.tap()
+
+        XCTAssertTrue(app.staticTexts["Workout A"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["SKIP"].waitForExistence(timeout: 5))
+    }
+
+    @MainActor
+    func testCancellingAMinimizedWorkoutRemovesTheMiniBar() throws {
+        let app = launchApp()
+
+        app.buttons["Start Workout A"].tap()
+        XCTAssertTrue(app.staticTexts["Workout A"].waitForExistence(timeout: 5))
+
+        app.buttons["minimizeWorkoutButton"].tap()
+        let bar = app.buttons["activeWorkoutBar"]
+        XCTAssertTrue(bar.waitForExistence(timeout: 5))
+        bar.tap()
+
+        XCTAssertTrue(app.staticTexts["Workout A"].waitForExistence(timeout: 5))
+        app.buttons["Cancel"].tap()
+        let alert = app.alerts["Cancel this workout?"]
+        XCTAssertTrue(alert.waitForExistence(timeout: 5))
+        alert.buttons["Delete Workout"].tap()
+
+        XCTAssertTrue(app.buttons["Start Workout A"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["activeWorkoutBar"].exists)
+    }
 }
