@@ -289,6 +289,14 @@ struct ActiveWorkoutView: View {
         session.restEndDate = rest?.endDate
         session.restLabel = rest?.nextUpLabel
         try? modelContext.save()
+
+        if rest != nil {
+            // Resolve notification permission now, while the app is
+            // foregrounded — a rest just started, so this is the natural
+            // moment to ask, and it guarantees permission is already settled
+            // by the time the app might background mid-rest.
+            Task { await NotificationManager.shared.requestAuthorizationIfNeeded() }
+        }
     }
 }
 

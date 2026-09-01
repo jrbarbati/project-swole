@@ -366,7 +366,7 @@ final class _x5iveUITests: XCTestCase {
         // so its absence is the real signal minimizing worked.
         XCTAssertFalse(app.buttons["minimizeWorkoutButton"].exists)
 
-        let countdown = app.staticTexts.matching(NSPredicate(format: "label MATCHES %@", "\\d:[0-5][0-9]")).firstMatch
+        let countdown = app.staticTexts["activeWorkoutBarRestCountdown"]
         XCTAssertTrue(countdown.waitForExistence(timeout: 5))
     }
 
