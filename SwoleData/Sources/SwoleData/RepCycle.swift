@@ -5,8 +5,14 @@ public enum RestOutcome: Equatable, Sendable {
 
 public enum RepCycle {
     public static func next(current: Int?, target: Int) -> Int? {
-        guard let current else { return target }
-        if current == 0 { return nil }
+        guard let current else {
+            return target
+        }
+        
+        if current == 0 {
+            return nil
+        }
+        
         return current - 1
     }
 }

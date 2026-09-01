@@ -133,10 +133,16 @@ public final class ActiveWorkoutViewModel {
 
         pendingSettleTasks[setID] = Task { [weak self] in
             try? await Task.sleep(for: delay)
-            guard !Task.isCancelled, let self else { return }
+            
+            guard !Task.isCancelled, let self else {
+                return
+            }
 
             pendingSettleTasks[setID] = nil
-            guard let settledReps else { return }
+            
+            guard let settledReps else {
+                return
+            }
 
             settleFireCount += 1
             let outcome: RestOutcome = settledReps >= targetReps ? .success : .fail
@@ -170,11 +176,13 @@ public final class ActiveWorkoutViewModel {
 
     private static func restLabel(exerciseIsComplete: Bool, nextSetNumber: Int?) -> String {
         if exerciseIsComplete {
-            return "Rest · next exercise"
+            return "Get ready for the next exercise"
         }
+        
         if let nextSetNumber {
-            return "Rest · set \(nextSetNumber) next"
+            return "Set \(nextSetNumber) Now"
         }
+        
         return "Rest"
     }
 
@@ -193,7 +201,11 @@ public final class ActiveWorkoutViewModel {
         completionDismissTask?.cancel()
         completionDismissTask = Task { [weak self] in
             try? await Task.sleep(for: .seconds(6))
-            guard !Task.isCancelled else { return }
+            
+            guard !Task.isCancelled else {
+                return
+            }
+            
             self?.completion = nil
         }
     }

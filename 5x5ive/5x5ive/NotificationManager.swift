@@ -28,7 +28,9 @@ final class NotificationManager {
     /// foreground moment.
     func scheduleRestComplete(restEndDate: Date, body: String) async {
         let requestedGeneration = generation
-        guard RestNotificationPlanner.secondsUntilFire(restEndDate: restEndDate, now: .now) != nil else { return }
+        guard RestNotificationPlanner.secondsUntilFire(restEndDate: restEndDate, now: .now) != nil else {
+            return
+        }
 
         let settings = await center.notificationSettings()
         switch settings.authorizationStatus {
@@ -38,20 +40,22 @@ final class NotificationManager {
             return
         }
 
-        // Recomputed fresh here, after the only await in this method — the
-        // `notificationSettings()` fetch above — so the interval handed to
-        // the trigger reflects "now" at schedule time, not a value that may
-        // have gone stale while awaiting.
-        guard let seconds = RestNotificationPlanner.secondsUntilFire(restEndDate: restEndDate, now: .now) else { return }
+        guard let seconds = RestNotificationPlanner.secondsUntilFire(restEndDate: restEndDate, now: .now) else {
+            return
+        }
 
         let content = UNMutableNotificationContent()
-        content.title = "Rest complete"
+        content.title = "Rest Time is Over"
         content.body = body
         content.sound = .default
 
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: seconds, repeats: false)
         let request = UNNotificationRequest(identifier: restRequestID, content: content, trigger: trigger)
-        guard generation == requestedGeneration else { return }
+        
+        guard generation == requestedGeneration else {
+            return
+        }
+        
         try? await center.add(request)
     }
 
