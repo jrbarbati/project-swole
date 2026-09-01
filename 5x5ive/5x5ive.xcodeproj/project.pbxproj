@@ -10,10 +10,14 @@
 		0417607C30400F6800ACCEDC /* SwoleData in Frameworks */ = {isa = PBXBuildFile; productRef = 0417607B30400F6800ACCEDC /* SwoleData */; };
 		08B5DADD7835A484D56D62A4 /* WorkoutLiveActivityWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D242B079E32412BFCAB5C08 /* WorkoutLiveActivityWidget.swift */; };
 		3CC3D1FA49B725E83C7BE5AD /* WorkoutActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19A72A81782FF95AF96F0421 /* WorkoutActivityAttributes.swift */; };
+		4B1BC05025CB6A1AC194CC0D /* LiveActivityTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 675147A68D2282505E8F9D9D /* LiveActivityTheme.swift */; };
 		55863A52B06D450F1263ED0E /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 43610D62625862EDF8768C51 /* Foundation.framework */; };
+		5A198899B00BFD1E46428B96 /* WorkoutLiveActivityIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FEF149E55392459EB9F4472 /* WorkoutLiveActivityIntents.swift */; };
 		74A5B0668FE1677A2815BA26 /* WorkoutActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19A72A81782FF95AF96F0421 /* WorkoutActivityAttributes.swift */; };
 		79DF344906313C743A54899A /* 5x5iveWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 5FC71986DFEA6EE70A28C796 /* 5x5iveWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		86C4C3252665C16AE8F87EE6 /* FiveByFiveWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AFFBA50784DAD44A95E2F1E /* FiveByFiveWidgetBundle.swift */; };
+		9EF65255BEB80F30B9AFADFA /* LiveActivityComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1368AEB5FA77B78E93F07CD /* LiveActivityComponents.swift */; };
+		F176302D17A053620018D16C /* WorkoutLiveActivityIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FEF149E55392459EB9F4472 /* WorkoutLiveActivityIntents.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -59,32 +63,29 @@
 		0417605C303FFE2D00ACCEDC /* 5x5iveTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = 5x5iveTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		04176066303FFE2D00ACCEDC /* 5x5iveUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = 5x5iveUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		19A72A81782FF95AF96F0421 /* WorkoutActivityAttributes.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutActivityAttributes.swift; sourceTree = "<group>"; };
+		1FEF149E55392459EB9F4472 /* WorkoutLiveActivityIntents.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutLiveActivityIntents.swift; sourceTree = "<group>"; };
 		26D4CB7F071D15349694A978 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		43610D62625862EDF8768C51 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		4AFFBA50784DAD44A95E2F1E /* FiveByFiveWidgetBundle.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FiveByFiveWidgetBundle.swift; sourceTree = "<group>"; };
 		5FC71986DFEA6EE70A28C796 /* 5x5iveWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = 5x5iveWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		675147A68D2282505E8F9D9D /* LiveActivityTheme.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LiveActivityTheme.swift; sourceTree = "<group>"; };
 		7D242B079E32412BFCAB5C08 /* WorkoutLiveActivityWidget.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutLiveActivityWidget.swift; sourceTree = "<group>"; };
+		D1368AEB5FA77B78E93F07CD /* LiveActivityComponents.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LiveActivityComponents.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		0417604F303FFE2C00ACCEDC /* 5x5ive */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = 5x5ive;
 			sourceTree = "<group>";
 		};
 		0417605F303FFE2D00ACCEDC /* 5x5iveTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = 5x5iveTests;
 			sourceTree = "<group>";
 		};
 		04176069303FFE2D00ACCEDC /* 5x5iveUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = 5x5iveUITests;
 			sourceTree = "<group>";
 		};
@@ -170,6 +171,9 @@
 				26D4CB7F071D15349694A978 /* Info.plist */,
 				19A72A81782FF95AF96F0421 /* WorkoutActivityAttributes.swift */,
 				7D242B079E32412BFCAB5C08 /* WorkoutLiveActivityWidget.swift */,
+				675147A68D2282505E8F9D9D /* LiveActivityTheme.swift */,
+				D1368AEB5FA77B78E93F07CD /* LiveActivityComponents.swift */,
+				1FEF149E55392459EB9F4472 /* WorkoutLiveActivityIntents.swift */,
 			);
 			path = 5x5iveWidget;
 			sourceTree = "<group>";
@@ -294,7 +298,7 @@
 			mainGroup = 04176044303FFE2C00ACCEDC;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				0417607930400DE600ACCEDC /* XCLocalSwiftPackageReference "SwoleData" */,
+				0417607930400DE600ACCEDC /* XCLocalSwiftPackageReference "../SwoleData" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 0417604E303FFE2C00ACCEDC /* Products */;
@@ -346,6 +350,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				74A5B0668FE1677A2815BA26 /* WorkoutActivityAttributes.swift in Sources */,
+				F176302D17A053620018D16C /* WorkoutLiveActivityIntents.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -370,6 +375,9 @@
 				86C4C3252665C16AE8F87EE6 /* FiveByFiveWidgetBundle.swift in Sources */,
 				3CC3D1FA49B725E83C7BE5AD /* WorkoutActivityAttributes.swift in Sources */,
 				08B5DADD7835A484D56D62A4 /* WorkoutLiveActivityWidget.swift in Sources */,
+				4B1BC05025CB6A1AC194CC0D /* LiveActivityTheme.swift in Sources */,
+				9EF65255BEB80F30B9AFADFA /* LiveActivityComponents.swift in Sources */,
+				5A198899B00BFD1E46428B96 /* WorkoutLiveActivityIntents.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -821,7 +829,7 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		0417607930400DE600ACCEDC /* XCLocalSwiftPackageReference "SwoleData" */ = {
+		0417607930400DE600ACCEDC /* XCLocalSwiftPackageReference "../SwoleData" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../SwoleData;
 		};
@@ -830,7 +838,7 @@
 /* Begin XCSwiftPackageProductDependency section */
 		0417607B30400F6800ACCEDC /* SwoleData */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 0417607930400DE600ACCEDC /* XCLocalSwiftPackageReference "SwoleData" */;
+			package = 0417607930400DE600ACCEDC /* XCLocalSwiftPackageReference "../SwoleData" */;
 			productName = SwoleData;
 		};
 /* End XCSwiftPackageProductDependency section */

@@ -389,6 +389,41 @@ final class _x5iveUITests: XCTestCase {
         XCTAssertTrue(app.buttons["SKIP"].waitForExistence(timeout: 5))
     }
 
+    // MARK: - Live Activity content state (regression)
+
+    /// Clearing a logged set via the rep picker's "Clear set" settles with
+    /// `repsCompleted == nil` and doesn't start or end a rest, so it only
+    /// reaches `currentActivityState()` through the `.onChange(of:
+    /// session.loggedSetCount)` trigger. This can't observe the Live
+    /// Activity itself (XCUITest has no access to it), but it exercises the
+    /// exact code path that trigger runs on and proves the app stays
+    /// responsive through it.
+    @MainActor
+    func testClearingALoggedSetViaTheRepPickerKeepsTheWorkoutResponsive() throws {
+        let app = launchApp()
+
+        app.buttons["Start Workout A"].tap()
+        let firstSet = app.descendants(matching: .any)["Set 1"]
+        XCTAssertTrue(firstSet.waitForExistence(timeout: 5))
+        firstSet.tap()
+
+        let loggedSet = setTile(in: app, labeled: "Set 1", value: "5 reps")
+        XCTAssertTrue(loggedSet.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["SKIP"].waitForExistence(timeout: 5))
+        app.buttons["SKIP"].tap()
+
+        // A duration close to SetTileRow's 0.35s minimum isn't reliably
+        // recognized as a long press by XCUITest's synthetic touch — give it
+        // comfortable headroom.
+        loggedSet.press(forDuration: 1.2)
+        XCTAssertTrue(app.staticTexts["How many reps?"].waitForExistence(timeout: 5))
+        app.buttons["Clear set"].tap()
+
+        let clearedSet = setTile(in: app, labeled: "Set 1", value: "not logged")
+        XCTAssertTrue(clearedSet.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Workout A"].exists)
+    }
+
     @MainActor
     func testCancellingAMinimizedWorkoutRemovesTheMiniBar() throws {
         let app = launchApp()

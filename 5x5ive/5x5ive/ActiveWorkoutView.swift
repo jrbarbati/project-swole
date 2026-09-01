@@ -53,7 +53,17 @@ struct ActiveWorkoutView: View {
             if let state = currentActivityState() {
                 LiveActivityManager.shared.startIfNeeded(workoutTypeRawValue: session.workoutType.rawValue, state: state)
             }
+            WorkoutIntentBus.shared.subscribe { action in
+                switch action {
+                case .skipRest:
+                    viewModel.skipRest()
+                case .logNextSetAtTarget:
+                    // No Log button in the UI yet — nothing to do.
+                    break
+                }
+            }
         }
+        .onDisappear { WorkoutIntentBus.shared.unsubscribe() }
         .onChange(of: viewModel.activeRest) { _, newValue in
             syncRestToSession(newValue)
             if let state = currentActivityState() {
@@ -63,6 +73,14 @@ struct ActiveWorkoutView: View {
         .onChange(of: viewModel.completion?.logID) { _, _ in
             // Auto-advance: focus moves as soon as an exercise finishes.
             withAnimation(.snappy) { viewModel.focusFirstIncomplete(in: logs) }
+            if let state = currentActivityState() {
+                LiveActivityManager.shared.update(state: state)
+            }
+        }
+        .onChange(of: session.loggedSetCount) { _, _ in
+            // A set can log (or clear) without starting or ending a rest —
+            // e.g. via the rep picker's "Clear set" — which would otherwise
+            // leave the widget's tile row stale.
             if let state = currentActivityState() {
                 LiveActivityManager.shared.update(state: state)
             }
@@ -289,13 +307,26 @@ struct ActiveWorkoutView: View {
         let nextLog = logs.first { $0.order > currentLog.order }
         let rest = viewModel.activeRest
 
+        // SetLog relationships come back unordered — sort before mapping, or
+        // the widget's tile row reshuffles on every update.
+        let orderedSets = currentLog.sortedSets
+
+        // Weight is formatted HERE, in the unit the user has chosen, so the
+        // extension never needs UserSettings or the lb/kg conversion.
+        let weightLabel = "\(unit.fromLb(currentLog.targetWeight).formattedWeight) \(unit.rawValue)"
+
         return WorkoutActivityAttributes.ContentState(
             currentExerciseName: currentLog.exercise?.name ?? "",
             completedSets: currentLog.loggedSetCount,
             totalSets: currentLog.sets.count,
             nextExerciseName: nextLog?.exercise?.name,
             restStartDate: rest?.startDate,
-            restEndDate: rest?.endDate
+            restEndDate: rest?.endDate,
+            workoutTypeLabel: session.workoutType.rawValue,
+            targetWeightLabel: weightLabel,
+            setReps: orderedSets.map(\.repsCompleted),
+            targetReps: currentLog.targetReps,
+            restDuration: rest.map(\.totalSeconds)
         )
     }
 
