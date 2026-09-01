@@ -360,7 +360,14 @@ final class _x5iveUITests: XCTestCase {
 
         let bar = app.buttons["activeWorkoutBar"]
         XCTAssertTrue(bar.waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["Start Workout A"].exists == false)
+        // "Workout A" text also renders inside the mini bar itself, so it
+        // can't be used to prove the full-screen ActiveWorkoutView was
+        // dismissed. minimizeWorkoutButton only exists in that full screen,
+        // so its absence is the real signal minimizing worked.
+        XCTAssertFalse(app.buttons["minimizeWorkoutButton"].exists)
+
+        let countdown = app.staticTexts.matching(NSPredicate(format: "label MATCHES %@", "\\d:[0-5][0-9]")).firstMatch
+        XCTAssertTrue(countdown.waitForExistence(timeout: 5))
     }
 
     @MainActor
