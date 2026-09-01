@@ -55,8 +55,12 @@ struct RootView: View {
     private func handleScenePhaseChange(_ phase: ScenePhase) {
         switch phase {
         case .background:
-            guard let session = activeSessions.first, let end = session.restEndDate else { return }
-            let body = session.restLabel ?? "Rest complete"
+            guard let session = activeSessions.first, let end = session.restEndDate else {
+                return
+            }
+
+            let body = RestCompleteMessages.random()
+
             Task { await NotificationManager.shared.scheduleRestComplete(restEndDate: end, body: body) }
         case .active:
             NotificationManager.shared.cancelRestComplete()
