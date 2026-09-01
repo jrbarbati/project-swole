@@ -124,13 +124,12 @@ final class LiveActivityManager {
 
     private var currentActivity: Activity<WorkoutActivityAttributes>?
 
-    func start(workoutTypeRawValue: String, state: WorkoutActivityAttributes.ContentState)
+    /// No-ops if a matching system Activity already exists (covers: fresh
+    /// workout start, reopening a minimized workout, and app relaunch with
+    /// an existing active session — see Data flow below).
+    func startIfNeeded(workoutTypeRawValue: String, state: WorkoutActivityAttributes.ContentState)
     func update(state: WorkoutActivityAttributes.ContentState)
     func end()
-    /// Called from RootView's active-session reconciliation: re-attaches to
-    /// an already-running system Activity after an app relaunch, if one
-    /// still exists (e.g. background→foreground, not a kill).
-    func reconcile(hasActiveSession: Bool, currentState: WorkoutActivityAttributes.ContentState?)
 }
 ```
 
@@ -167,19 +166,18 @@ main app process.
 All trigger points live in the app target, alongside the existing
 `NotificationManager`/mini-bar call sites:
 
-- **Start** — `TodayView.startWorkout()`, immediately after
-  `WorkoutSessionService.startWorkout` succeeds: build the initial
-  `ContentState` from the first exercise log and call
-  `LiveActivityManager.shared.start(...)`.
-- **Resume-on-relaunch** — mirrors `ActiveWorkoutView`'s
-  `restoreOrClearPersistedRest` pattern. `RootView`'s existing
-  active-session reconciliation (`onAppear`, the
-  `activeSessions.first?.persistentModelID` `onChange`) calls
-  `LiveActivityManager.shared.reconcile(hasActiveSession:currentState:)`:
-  if there's an active session but no matching system `Activity` (found
-  via `Activity<WorkoutActivityAttributes>.activities`), start a fresh one
-  from current state; if there's an `Activity` but no active session
-  (shouldn't normally happen — belt-and-suspenders), end it.
+- **Start / resume-on-relaunch (consolidated)** — refined during planning:
+  rather than splitting "start" (`TodayView.startWorkout`) from "resume"
+  (`RootView`), both collapse into one idempotent call from
+  `ActiveWorkoutView.onAppear`, right alongside the existing
+  `restoreOrClearPersistedRest()` call. `onAppear` already fires in every
+  case that matters: a fresh workout just started, a minimized workout
+  reopened, or an app relaunch with an existing active session — so one
+  `LiveActivityManager.shared.startIfNeeded(...)` there covers all three.
+  It no-ops if a matching system `Activity` already exists (checked via
+  `Activity<WorkoutActivityAttributes>.activities`), otherwise builds the
+  initial `ContentState` and requests one. This satisfies the "one Live
+  Activity at a time" invariant without a separate reconcile pass.
 - **Update** — `ActiveWorkoutView`'s existing state-sync points get a
   sibling call: `syncRestToSession` (rest start/end/skip) and the
   exercise-advance points (`onAppear`'s initial focus, and
@@ -196,9 +194,10 @@ All trigger points live in the app target, alongside the existing
   `NotificationManager`-style failure. Nothing else in the app is
   affected — this is a pure add-on with no dependents.
 - **One-at-a-time invariant:** `LiveActivityManager` holds a single
-  `currentActivity` reference; `start` is only ever called from the one
-  workout-start call site, and `reconcile` checks for an existing system
-  Activity before starting another, so there's no duplicate-request race.
+  `currentActivity` reference; `startIfNeeded` checks
+  `Activity<WorkoutActivityAttributes>.activities` for an existing one
+  before requesting another, so repeated calls (every `onAppear`) are
+  idempotent and there's no duplicate-request race.
 - **Widget extension has no data access of its own** — no
   `ModelContainer`, no SwiftData import. It only ever renders the
   `ContentState` it's handed. This keeps the extension process fully
