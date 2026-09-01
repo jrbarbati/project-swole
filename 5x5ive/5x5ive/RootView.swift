@@ -7,6 +7,8 @@ struct RootView: View {
            sort: \WorkoutSession.startedAt, order: .reverse)
     private var activeSessions: [WorkoutSession]
 
+    @Environment(\.scenePhase) private var scenePhase
+
     @State private var selectedTab: Tab = .today
     /// Snapshot of the presented session, deliberately NOT recomputed from
     /// `activeSessions` on every change: `finishWorkout` sets `finishedAt`
@@ -26,6 +28,10 @@ struct RootView: View {
                 tabContent(.settings) { NavigationStack { SettingsView() } }
             }
 
+            if let session = activeSessions.first, presentedSession == nil {
+                ActiveWorkoutBar(session: session) { presentedSession = session }
+            }
+
             CustomTabBar(selection: $selectedTab)
         }
         .tint(Theme.accent)
@@ -37,6 +43,25 @@ struct RootView: View {
         .onChange(of: activeSessions.first?.persistentModelID) { _, newID in
             guard newID != nil, presentedSession == nil else { return }
             presentedSession = activeSessions.first
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            handleScenePhaseChange(newPhase)
+        }
+    }
+
+    /// Schedules a local notification for the active session's rest window
+    /// on backgrounding (only moment the countdown isn't visible somewhere);
+    /// cancels it once the user is back in the app.
+    private func handleScenePhaseChange(_ phase: ScenePhase) {
+        switch phase {
+        case .background:
+            guard let session = activeSessions.first, let end = session.restEndDate else { return }
+            let body = session.restLabel ?? "Rest complete"
+            Task { await NotificationManager.shared.scheduleRestComplete(restEndDate: end, body: body) }
+        case .active:
+            NotificationManager.shared.cancelRestComplete()
+        default:
+            break
         }
     }
 
