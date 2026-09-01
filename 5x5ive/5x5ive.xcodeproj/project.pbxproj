@@ -8,6 +8,9 @@
 
 /* Begin PBXBuildFile section */
 		0417607C30400F6800ACCEDC /* SwoleData in Frameworks */ = {isa = PBXBuildFile; productRef = 0417607B30400F6800ACCEDC /* SwoleData */; };
+		55863A52B06D450F1263ED0E /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 43610D62625862EDF8768C51 /* Foundation.framework */; };
+		79DF344906313C743A54899A /* 5x5iveWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 5FC71986DFEA6EE70A28C796 /* 5x5iveWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		86C4C3252665C16AE8F87EE6 /* FiveByFiveWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AFFBA50784DAD44A95E2F1E /* FiveByFiveWidgetBundle.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -25,27 +28,58 @@
 			remoteGlobalIDString = 0417604C303FFE2C00ACCEDC;
 			remoteInfo = 5x5ive;
 		};
+		5A2B70D84F09F4E8FA9566FE /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 04176045303FFE2C00ACCEDC /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A74CFA2D270513D987C760CD;
+			remoteInfo = 5x5iveWidget;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		1414EACD59AD673818842B59 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				79DF344906313C743A54899A /* 5x5iveWidget.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		0417604D303FFE2C00ACCEDC /* 5x5ive.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = 5x5ive.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0417605C303FFE2D00ACCEDC /* 5x5iveTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = 5x5iveTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		04176066303FFE2D00ACCEDC /* 5x5iveUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = 5x5iveUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		26D4CB7F071D15349694A978 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		43610D62625862EDF8768C51 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+		4AFFBA50784DAD44A95E2F1E /* FiveByFiveWidgetBundle.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FiveByFiveWidgetBundle.swift; sourceTree = "<group>"; };
+		5FC71986DFEA6EE70A28C796 /* 5x5iveWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = 5x5iveWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		0417604F303FFE2C00ACCEDC /* 5x5ive */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
 			path = 5x5ive;
 			sourceTree = "<group>";
 		};
 		0417605F303FFE2D00ACCEDC /* 5x5iveTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
 			path = 5x5iveTests;
 			sourceTree = "<group>";
 		};
 		04176069303FFE2D00ACCEDC /* 5x5iveUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
 			path = 5x5iveUITests;
 			sourceTree = "<group>";
 		};
@@ -74,6 +108,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F319FC2A1376378DE7F22BC0 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				55863A52B06D450F1263ED0E /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -85,6 +127,7 @@
 				04176069303FFE2D00ACCEDC /* 5x5iveUITests */,
 				0417607A30400F6800ACCEDC /* Frameworks */,
 				0417604E303FFE2C00ACCEDC /* Products */,
+				D1EDE18570D8687C10065FBA /* 5x5iveWidget */,
 			);
 			sourceTree = "<group>";
 		};
@@ -94,6 +137,7 @@
 				0417604D303FFE2C00ACCEDC /* 5x5ive.app */,
 				0417605C303FFE2D00ACCEDC /* 5x5iveTests.xctest */,
 				04176066303FFE2D00ACCEDC /* 5x5iveUITests.xctest */,
+				5FC71986DFEA6EE70A28C796 /* 5x5iveWidget.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -101,8 +145,27 @@
 		0417607A30400F6800ACCEDC /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				175B23EF1BD790B19E5CB2E5 /* iOS */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		175B23EF1BD790B19E5CB2E5 /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				43610D62625862EDF8768C51 /* Foundation.framework */,
+			);
+			name = iOS;
+			sourceTree = "<group>";
+		};
+		D1EDE18570D8687C10065FBA /* 5x5iveWidget */ = {
+			isa = PBXGroup;
+			children = (
+				4AFFBA50784DAD44A95E2F1E /* FiveByFiveWidgetBundle.swift */,
+				26D4CB7F071D15349694A978 /* Info.plist */,
+			);
+			name = 5x5iveWidget;
+			path = 5x5iveWidget;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -115,10 +178,12 @@
 				04176049303FFE2C00ACCEDC /* Sources */,
 				0417604A303FFE2C00ACCEDC /* Frameworks */,
 				0417604B303FFE2C00ACCEDC /* Resources */,
+				1414EACD59AD673818842B59 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				3CBB4F95AC49842192D19399 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				0417604F303FFE2C00ACCEDC /* 5x5ive */,
@@ -148,8 +213,6 @@
 				0417605F303FFE2D00ACCEDC /* 5x5iveTests */,
 			);
 			name = 5x5iveTests;
-			packageProductDependencies = (
-			);
 			productName = 5x5iveTests;
 			productReference = 0417605C303FFE2D00ACCEDC /* 5x5iveTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
@@ -171,11 +234,26 @@
 				04176069303FFE2D00ACCEDC /* 5x5iveUITests */,
 			);
 			name = 5x5iveUITests;
-			packageProductDependencies = (
-			);
 			productName = 5x5iveUITests;
 			productReference = 04176066303FFE2D00ACCEDC /* 5x5iveUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		A74CFA2D270513D987C760CD /* 5x5iveWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A40E0314F1809ED23CAB8057 /* Build configuration list for PBXNativeTarget "5x5iveWidget" */;
+			buildPhases = (
+				A7C870066E810EDA77633818 /* Sources */,
+				F319FC2A1376378DE7F22BC0 /* Frameworks */,
+				E83EBA70E08BAEB17ABA948C /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = 5x5iveWidget;
+			productName = 5x5iveWidget;
+			productReference = 5FC71986DFEA6EE70A28C796 /* 5x5iveWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -210,7 +288,7 @@
 			mainGroup = 04176044303FFE2C00ACCEDC;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				0417607930400DE600ACCEDC /* XCLocalSwiftPackageReference "../SwoleData" */,
+				0417607930400DE600ACCEDC /* XCLocalSwiftPackageReference "SwoleData" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 0417604E303FFE2C00ACCEDC /* Products */;
@@ -220,6 +298,7 @@
 				0417604C303FFE2C00ACCEDC /* 5x5ive */,
 				0417605B303FFE2D00ACCEDC /* 5x5iveTests */,
 				04176065303FFE2D00ACCEDC /* 5x5iveUITests */,
+				A74CFA2D270513D987C760CD /* 5x5iveWidget */,
 			);
 		};
 /* End PBXProject section */
@@ -240,6 +319,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		04176064303FFE2D00ACCEDC /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E83EBA70E08BAEB17ABA948C /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -270,6 +356,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A7C870066E810EDA77633818 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				86C4C3252665C16AE8F87EE6 /* FiveByFiveWidgetBundle.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -282,6 +376,12 @@
 			isa = PBXTargetDependency;
 			target = 0417604C303FFE2C00ACCEDC /* 5x5ive */;
 			targetProxy = 04176067303FFE2D00ACCEDC /* PBXContainerItemProxy */;
+		};
+		3CBB4F95AC49842192D19399 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = 5x5iveWidget;
+			target = A74CFA2D270513D987C760CD /* 5x5iveWidget */;
+			targetProxy = 5A2B70D84F09F4E8FA9566FE /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -421,6 +521,7 @@
 				"INFOPLIST_KEY_NSHealthShareUsageDescription[sdk=iphonesimulator*]" = "Used to estimate calories burned during your workouts.";
 				"INFOPLIST_KEY_NSHealthUpdateUsageDescription[sdk=iphoneos*]" = "Saves your finished workouts to Health.";
 				"INFOPLIST_KEY_NSHealthUpdateUsageDescription[sdk=iphonesimulator*]" = "Saves your finished workouts to Health.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -471,6 +572,7 @@
 				"INFOPLIST_KEY_NSHealthShareUsageDescription[sdk=iphonesimulator*]" = "Used to estimate calories burned during your workouts.";
 				"INFOPLIST_KEY_NSHealthUpdateUsageDescription[sdk=iphoneos*]" = "Saves your finished workouts to Health.";
 				"INFOPLIST_KEY_NSHealthUpdateUsageDescription[sdk=iphonesimulator*]" = "Saves your finished workouts to Health.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -604,6 +706,61 @@
 			};
 			name = Release;
 		};
+		6437489D1947133FDFCC0339 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = 5x5iveWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = 5x5iveWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.fivebyfive.-x5ive.5x5iveWidget";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		ED1FCB6B38220EAB32959157 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = 5x5iveWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = 5x5iveWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.fivebyfive.-x5ive.5x5iveWidget";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -643,10 +800,19 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		A40E0314F1809ED23CAB8057 /* Build configuration list for PBXNativeTarget "5x5iveWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				ED1FCB6B38220EAB32959157 /* Release */,
+				6437489D1947133FDFCC0339 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		0417607930400DE600ACCEDC /* XCLocalSwiftPackageReference "../SwoleData" */ = {
+		0417607930400DE600ACCEDC /* XCLocalSwiftPackageReference "SwoleData" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../SwoleData;
 		};
@@ -655,7 +821,7 @@
 /* Begin XCSwiftPackageProductDependency section */
 		0417607B30400F6800ACCEDC /* SwoleData */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 0417607930400DE600ACCEDC /* XCLocalSwiftPackageReference "../SwoleData" */;
+			package = 0417607930400DE600ACCEDC /* XCLocalSwiftPackageReference "SwoleData" */;
 			productName = SwoleData;
 		};
 /* End XCSwiftPackageProductDependency section */
