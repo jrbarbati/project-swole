@@ -47,7 +47,13 @@ struct ActiveWorkoutView: View {
             actionRow
         }
         .background(Theme.canvas)
-        .onAppear { viewModel.focusFirstIncomplete(in: logs) }
+        .onAppear {
+            viewModel.focusFirstIncomplete(in: logs)
+            restoreOrClearPersistedRest()
+        }
+        .onChange(of: viewModel.activeRest) { _, newValue in
+            syncRestToSession(newValue)
+        }
         .onChange(of: viewModel.completion?.logID) { _, _ in
             // Auto-advance: focus moves as soon as an exercise finishes.
             withAnimation(.snappy) { viewModel.focusFirstIncomplete(in: logs) }
@@ -96,10 +102,30 @@ struct ActiveWorkoutView: View {
                 .font(Theme.Font.label())
                 .tracking(1.4)
                 .foregroundStyle(Theme.accentText)
+            minimizeButton
         }
         .padding(.top, 10)
         .padding(.horizontal, Theme.Space.screen)
         .padding(.bottom, 18)
+    }
+
+    /// Dismisses back to the tab UI without cancelling or finishing the
+    /// workout — `RootView`'s active-session query still finds this session,
+    /// so it reopens exactly as left when the user taps `ActiveWorkoutBar`.
+    private var minimizeButton: some View {
+        Button {
+            dismiss()
+        } label: {
+            Image(systemName: "chevron.down")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(Theme.textMuted)
+                .frame(width: 30, height: 30)
+                .overlay(Circle().stroke(Theme.borderStrong, lineWidth: 1))
+                .contentShape(Rectangle().inset(by: -5))
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("minimizeWorkoutButton")
+        .padding(.leading, 10)
     }
 
     private func completionBanner(for completion: ActiveWorkoutViewModel.Completion) -> some View {
@@ -238,6 +264,31 @@ struct ActiveWorkoutView: View {
     private func cancel() {
         try? WorkoutSessionService.cancelWorkout(session, in: modelContext)
         dismiss()
+    }
+
+    /// Reconstructs a still-running rest countdown when re-opening a
+    /// minimized workout; clears stale rest fields left over from a rest
+    /// that finished while the workout was minimized.
+    private func restoreOrClearPersistedRest() {
+        guard let end = session.restEndDate else { return }
+        if end > .now, let start = session.restStartDate, let label = session.restLabel {
+            viewModel.restore(startDate: start, endDate: end, label: label)
+        } else {
+            session.restStartDate = nil
+            session.restEndDate = nil
+            session.restLabel = nil
+            try? modelContext.save()
+        }
+    }
+
+    /// Mirrors the view model's rest window onto the session so it's
+    /// readable from `RootView` (which doesn't own an `ActiveWorkoutViewModel`)
+    /// after this view is dismissed.
+    private func syncRestToSession(_ rest: ActiveWorkoutViewModel.ActiveRest?) {
+        session.restStartDate = rest?.startDate
+        session.restEndDate = rest?.endDate
+        session.restLabel = rest?.nextUpLabel
+        try? modelContext.save()
     }
 }
 
