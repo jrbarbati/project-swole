@@ -32,8 +32,8 @@ struct WorkoutLiveActivityWidget: Widget {
                 trailingContent(for: context.state)
                     .font(.caption2)
             } minimal: {
-                if let restEndDate = context.state.restEndDate {
-                    Text(timerInterval: Date.now...restEndDate, countsDown: true)
+                if let restStartDate = context.state.restStartDate, let restEndDate = context.state.restEndDate {
+                    Text(timerInterval: restStartDate...restEndDate, countsDown: true)
                         .font(.caption2)
                         .monospacedDigit()
                 } else {
@@ -71,8 +71,8 @@ struct WorkoutLiveActivityWidget: Widget {
 
     @ViewBuilder
     private func trailingContent(for state: WorkoutActivityAttributes.ContentState) -> some View {
-        if let restEndDate = state.restEndDate {
-            Text(timerInterval: Date.now...restEndDate, countsDown: true)
+        if let restStartDate = state.restStartDate, let restEndDate = state.restEndDate {
+            Text(timerInterval: restStartDate...restEndDate, countsDown: true)
                 .monospacedDigit()
         } else {
             Text("\(state.completedSets)/\(state.totalSets)")

@@ -15,13 +15,16 @@ final class LiveActivityManager {
 
     private init() {}
 
-    /// No-ops if a matching system Activity already exists — covers a
-    /// fresh workout start, reopening a minimized workout, and an app
-    /// relaunch with an existing active session, all from one call site
+    /// Adopts whatever system Activity already exists (there is ever at
+    /// most one, per the app's one-active-session invariant) and pushes
+    /// fresh state to it; otherwise starts a new one. Covers a fresh
+    /// workout start, reopening a minimized workout, and an app relaunch
+    /// with an existing active session, all from one call site
     /// (`ActiveWorkoutView.onAppear`).
     func startIfNeeded(workoutTypeRawValue: String, state: WorkoutActivityAttributes.ContentState) {
         if let existing = Activity<WorkoutActivityAttributes>.activities.first {
             currentActivity = existing
+            update(state: state)
             return
         }
         guard currentActivity == nil else { return }
@@ -44,13 +47,15 @@ final class LiveActivityManager {
     }
 
     /// A rest window re-arms the stale date a couple minutes past its own
-    /// end; otherwise a shorter fixed buffer, re-armed on every update — so
-    /// an actively-updating workout never goes stale, while one whose app
-    /// process died stops getting re-armed and dims on schedule.
+    /// end; otherwise a 10-minute fixed buffer, re-armed on every update —
+    /// so an actively-updating workout never goes stale (including normal
+    /// gaps like pre-first-set setup time or a minimized workout, which
+    /// gets no updates until it's reopened), while one whose app process
+    /// died stops getting re-armed and dims on schedule.
     private func staleDate(for state: WorkoutActivityAttributes.ContentState) -> Date {
         if let restEnd = state.restEndDate {
             return restEnd.addingTimeInterval(120)
         }
-        return Date.now.addingTimeInterval(90)
+        return Date.now.addingTimeInterval(600)
     }
 }
