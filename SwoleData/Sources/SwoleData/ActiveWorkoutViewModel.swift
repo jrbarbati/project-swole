@@ -78,6 +78,14 @@ public final class ActiveWorkoutViewModel {
         activeRest = nil
     }
 
+    /// Reconstructs a still-running rest window after the view that owns
+    /// this view model was recreated (e.g. re-opening a minimized workout).
+    /// Outcome is irrelevant here — it only affects which duration a rest
+    /// *starts* with — so `.success` is used unconditionally.
+    public func restore(startDate: Date, endDate: Date, label: String) {
+        activeRest = ActiveRest(outcome: .success, startDate: startDate, endDate: endDate, nextUpLabel: label)
+    }
+
     public func dismissCompletion() {
         completionDismissTask?.cancel()
         completion = nil

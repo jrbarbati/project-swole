@@ -121,3 +121,16 @@ private func makeFixture(target: Int = 5, restOnSuccess: Int = 90, restOnFail: I
     model.dismissCompletion()
     #expect(model.completion == nil)
 }
+
+@Test @MainActor func restoreSetsActiveRestFromPersistedWindow() throws {
+    let model = ActiveWorkoutViewModel()
+    let start = Date.now.addingTimeInterval(-30)
+    let end = Date.now.addingTimeInterval(60)
+
+    model.restore(startDate: start, endDate: end, label: "Rest · set 3 next")
+
+    #expect(model.activeRest?.startDate == start)
+    #expect(model.activeRest?.endDate == end)
+    #expect(model.activeRest?.nextUpLabel == "Rest · set 3 next")
+    #expect(model.activeRest?.remaining(at: .now) ?? 0 > 0)
+}
