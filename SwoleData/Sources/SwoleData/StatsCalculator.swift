@@ -67,9 +67,9 @@ public enum StatsCalculator {
         )
     }
 
-    public static func streaks(in context: ModelContext, now: Date = .now, calendar: Calendar = .current) throws -> StreakInfo {
-        let sessions = try finishedSessions(in: context)
-        let weekStarts = Set(sessions.map { calendar.dateInterval(of: .weekOfYear, for: $0.startedAt)?.start ?? $0.startedAt })
+    static func streaks(from sessions: [WorkoutSession], now: Date, calendar: Calendar) -> StreakInfo {
+        let sessionsByWeek = Dictionary(grouping: sessions) { calendar.dateInterval(of: .weekOfYear, for: $0.startedAt)?.start ?? $0.startedAt }
+        let weekStarts = Set(sessionsByWeek.filter { $0.value.count >= 3 }.map(\.key))
         guard !weekStarts.isEmpty else { return StreakInfo(currentWeeks: 0, longestWeeks: 0) }
 
         let sorted = weekStarts.sorted()
@@ -97,6 +97,11 @@ public enum StatsCalculator {
         }
 
         return StreakInfo(currentWeeks: current, longestWeeks: longest)
+    }
+
+    public static func streaks(in context: ModelContext, now: Date = .now, calendar: Calendar = .current) throws -> StreakInfo {
+        let sessions = try finishedSessions(in: context)
+        return streaks(from: sessions, now: now, calendar: calendar)
     }
 
     public static func personalRecords(

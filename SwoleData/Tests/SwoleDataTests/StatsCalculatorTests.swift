@@ -163,12 +163,29 @@ private func insertFinishedSession(
     #expect(streak.longestWeeks == 0)
 }
 
-@Test func streaksCountsAWorkoutThisWeekAsCurrentStreakOfOne() throws {
+@Test func streaksRequireAtLeastThreeWorkoutsInAWeekToCount() throws {
     let context = try makeInMemoryContext()
     let now = Date()
     let squat = Exercise(name: "Squat", defaultSetCount: 5, defaultRepsPerSet: 5)
     context.insert(squat)
     insertFinishedSession(exercise: squat, weight: 100, reps: 5, sets: 1, startedAt: now, context: context)
+    insertFinishedSession(exercise: squat, weight: 100, reps: 5, sets: 1, startedAt: now.addingTimeInterval(3600), context: context)
+    try context.save()
+
+    let streak = try StatsCalculator.streaks(in: context, now: now)
+
+    #expect(streak.currentWeeks == 0)
+    #expect(streak.longestWeeks == 0)
+}
+
+@Test func streaksCountsAWeekWithThreeWorkoutsAsCurrentStreakOfOne() throws {
+    let context = try makeInMemoryContext()
+    let now = Date()
+    let squat = Exercise(name: "Squat", defaultSetCount: 5, defaultRepsPerSet: 5)
+    context.insert(squat)
+    for offset in [0, 1, 2] {
+        insertFinishedSession(exercise: squat, weight: 100, reps: 5, sets: 1, startedAt: now.addingTimeInterval(Double(offset) * 3600), context: context)
+    }
     try context.save()
 
     let streak = try StatsCalculator.streaks(in: context, now: now)
@@ -185,7 +202,9 @@ private func insertFinishedSession(
     context.insert(squat)
 
     let lastWeek = calendar.date(byAdding: .day, value: -7, to: now)!
-    insertFinishedSession(exercise: squat, weight: 100, reps: 5, sets: 1, startedAt: lastWeek, context: context)
+    for offset in [0, 1, 2] {
+        insertFinishedSession(exercise: squat, weight: 100, reps: 5, sets: 1, startedAt: lastWeek.addingTimeInterval(Double(offset) * 3600), context: context)
+    }
     try context.save()
 
     let streak = try StatsCalculator.streaks(in: context, now: now)
@@ -201,7 +220,9 @@ private func insertFinishedSession(
     context.insert(squat)
 
     let threeWeeksAgo = calendar.date(byAdding: .day, value: -21, to: now)!
-    insertFinishedSession(exercise: squat, weight: 100, reps: 5, sets: 1, startedAt: threeWeeksAgo, context: context)
+    for offset in [0, 1, 2] {
+        insertFinishedSession(exercise: squat, weight: 100, reps: 5, sets: 1, startedAt: threeWeeksAgo.addingTimeInterval(Double(offset) * 3600), context: context)
+    }
     try context.save()
 
     let streak = try StatsCalculator.streaks(in: context, now: now)
@@ -216,12 +237,15 @@ private func insertFinishedSession(
     let squat = Exercise(name: "Squat", defaultSetCount: 5, defaultRepsPerSet: 5)
     context.insert(squat)
 
-    // A 3-week run, ten weeks ago, then a gap, then this week's single session.
     for weeksAgo in [10, 11, 12] {
-        let date = calendar.date(byAdding: .day, value: -7 * weeksAgo, to: now)!
-        insertFinishedSession(exercise: squat, weight: 100, reps: 5, sets: 1, startedAt: date, context: context)
+        let weekStart = calendar.date(byAdding: .day, value: -7 * weeksAgo, to: now)!
+        for offset in [0, 1, 2] {
+            insertFinishedSession(exercise: squat, weight: 100, reps: 5, sets: 1, startedAt: weekStart.addingTimeInterval(Double(offset) * 3600), context: context)
+        }
     }
-    insertFinishedSession(exercise: squat, weight: 100, reps: 5, sets: 1, startedAt: now, context: context)
+    for offset in [0, 1, 2] {
+        insertFinishedSession(exercise: squat, weight: 100, reps: 5, sets: 1, startedAt: now.addingTimeInterval(Double(offset) * 3600), context: context)
+    }
     try context.save()
 
     let streak = try StatsCalculator.streaks(in: context, now: now)
