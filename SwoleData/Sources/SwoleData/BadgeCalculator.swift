@@ -246,4 +246,11 @@ public enum BadgeCalculator {
     public static func allBadges(unit: MeasurementUnit, in context: ModelContext, now: Date = .now, calendar: Calendar = .current) throws -> [Badge] {
         try coreBadges(unit: unit, excluding: nil, in: context, now: now, calendar: calendar)
     }
+
+    public static func newlyUnlocked(for session: WorkoutSession, unit: MeasurementUnit, in context: ModelContext, now: Date = .now, calendar: Calendar = .current) throws -> [Badge] {
+        let after = try coreBadges(unit: unit, excluding: nil, in: context, now: now, calendar: calendar)
+        let before = try coreBadges(unit: unit, excluding: session.persistentModelID, in: context, now: now, calendar: calendar)
+        let beforeUnlockedIDs = Set(before.filter(\.isUnlocked).map(\.id))
+        return after.filter { $0.isUnlocked && !beforeUnlockedIDs.contains($0.id) }
+    }
 }

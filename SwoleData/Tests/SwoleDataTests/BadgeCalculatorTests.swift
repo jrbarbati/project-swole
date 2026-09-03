@@ -226,3 +226,50 @@ private func insertFinishedSession(
 
     #expect(tier1000?.unlockedAt == crossingDate.addingTimeInterval(40 * 60))
 }
+
+@Test func newlyUnlockedReturnsTierCrossedByThisSessionOnly() throws {
+    let context = try makeInMemoryContext()
+    let squat = Exercise(name: "Squat", defaultSetCount: 5, defaultRepsPerSet: 5)
+    context.insert(squat)
+    insertFinishedSession(exercise: squat, weight: 100, reps: 5, sets: 5, startedAt: Date().addingTimeInterval(-86400), context: context)
+    try context.save()
+
+    let session = insertFinishedSession(exercise: squat, weight: 150, reps: 5, sets: 5, startedAt: .now, context: context)
+    try context.save()
+
+    let newBadges = try BadgeCalculator.newlyUnlocked(for: session, unit: .lb, in: context)
+
+    let crossedTargets = newBadges.compactMap { badge -> Double? in
+        guard case .exerciseVolume(let name) = badge.category, name == "Squat" else { return nil }
+        return badge.progressTarget
+    }
+    #expect(crossedTargets == [5000])
+}
+
+@Test func newlyUnlockedReturnsNothingWhenNoTierIsCrossed() throws {
+    let context = try makeInMemoryContext()
+    let squat = Exercise(name: "Squat", defaultSetCount: 5, defaultRepsPerSet: 5)
+    context.insert(squat)
+    insertFinishedSession(exercise: squat, weight: 200, reps: 5, sets: 5, startedAt: Date().addingTimeInterval(-86400), context: context)
+    try context.save()
+    let session = insertFinishedSession(exercise: squat, weight: 5, reps: 1, sets: 1, startedAt: .now, context: context)
+    try context.save()
+
+    let newBadges = try BadgeCalculator.newlyUnlocked(for: session, unit: .lb, in: context)
+
+    #expect(newBadges.isEmpty)
+}
+
+@Test func newlyUnlockedNeverReturnsATierAlreadyEarnedBeforeThisSession() throws {
+    let context = try makeInMemoryContext()
+    let squat = Exercise(name: "Squat", defaultSetCount: 5, defaultRepsPerSet: 5)
+    context.insert(squat)
+    insertFinishedSession(exercise: squat, weight: 1000, reps: 5, sets: 5, startedAt: Date().addingTimeInterval(-86400), context: context)
+    try context.save()
+    let session = insertFinishedSession(exercise: squat, weight: 10, reps: 1, sets: 1, startedAt: .now, context: context)
+    try context.save()
+
+    let newBadges = try BadgeCalculator.newlyUnlocked(for: session, unit: .lb, in: context)
+
+    #expect(newBadges.isEmpty)
+}
