@@ -15,6 +15,8 @@ struct StatsView: View {
     @State private var records: [PersonalRecord] = []
     @State private var selectedExercise: Exercise?
     @State private var trendLogs: [ExerciseLog] = []
+    @State private var badges: [Badge] = []
+    @State private var selectedBadge: Badge?
 
     private var unit: MeasurementUnit { settingsList.first?.unit ?? .lb }
 
@@ -35,6 +37,7 @@ struct StatsView: View {
                 volumeCard
                 strengthCard
                 recordsCard
+                badgesCard
             }
             .padding(.bottom, 24)
         }
@@ -43,6 +46,10 @@ struct StatsView: View {
         .task { await loadAll() }
         .onChange(of: range) { _, _ in Task { await loadAll() } }
         .onChange(of: selectedExercise) { _, _ in Task { await loadTrend() } }
+        .sheet(item: $selectedBadge) { badge in
+            BadgeDetailSheet(badge: badge, unit: unit)
+                .presentationDetents([.height(260)])
+        }
     }
 
     // MARK: - Range picker
@@ -148,6 +155,60 @@ struct StatsView: View {
         }
     }
 
+    private var badgesCard: some View {
+        card {
+            HStack(alignment: .firstTextBaseline) {
+                MetaLabel(text: "Badges").tracking(1.6)
+                Spacer()
+                MetaLabel(text: "\(unlockedBadgeCount) / \(badges.count) earned", color: Theme.accentText)
+            }
+
+            ForEach(badgeGroups, id: \.title) { group in
+                VStack(alignment: .leading, spacing: 10) {
+                    MetaLabel(text: group.title, color: Theme.textDim)
+                    LazyVGrid(columns: badgeGridColumns, spacing: 12) {
+                        ForEach(group.badges) { badge in
+                            BadgeTile(badge: badge)
+                                .onTapGesture { selectedBadge = badge }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private var unlockedBadgeCount: Int { badges.filter(\.isUnlocked).count }
+
+    private let badgeGridColumns = Array(repeating: GridItem(.flexible(), spacing: 12), count: 4)
+
+    private struct BadgeGroup {
+        let title: String
+        let badges: [Badge]
+    }
+
+    private var badgeGroups: [BadgeGroup] {
+        var groups: [BadgeGroup] = []
+
+        let streakBadges = badges.filter { $0.category == .streak }
+        if !streakBadges.isEmpty { groups.append(BadgeGroup(title: "Streaks", badges: streakBadges)) }
+
+        let countBadges = badges.filter { $0.category == .workoutCount }
+        if !countBadges.isEmpty { groups.append(BadgeGroup(title: "Workouts", badges: countBadges)) }
+
+        let totalBadges = badges.filter { $0.category == .totalVolume }
+        if !totalBadges.isEmpty { groups.append(BadgeGroup(title: "Total Volume", badges: totalBadges)) }
+
+        for exercise in exercises {
+            let exerciseBadges = badges.filter {
+                guard case .exerciseVolume(let name) = $0.category else { return false }
+                return name == exercise.name
+            }
+            if !exerciseBadges.isEmpty { groups.append(BadgeGroup(title: exercise.name, badges: exerciseBadges)) }
+        }
+
+        return groups
+    }
+
     private func recordRow(_ record: PersonalRecord) -> some View {
         HStack(alignment: .firstTextBaseline) {
             Text(record.exercise.name)
@@ -207,6 +268,7 @@ struct StatsView: View {
         streak = try? StatsCalculator.streaks(in: modelContext)
         volumePoints = (try? StatsCalculator.weeklyVolume(range: range, in: modelContext)) ?? []
         records = (try? StatsCalculator.personalRecords(range: range, in: modelContext)) ?? []
+        badges = (try? BadgeCalculator.allBadges(unit: unit, in: modelContext)) ?? []
         if selectedExercise == nil { selectedExercise = exercises.first }
         await loadTrend()
     }
@@ -234,5 +296,84 @@ private struct VolumeBarChart: View {
         }
         .chartXAxis(.hidden)
         .chartYAxis(.hidden)
+    }
+}
+
+// MARK: - Badges
+
+private struct BadgeTile: View {
+    let badge: Badge
+
+    var body: some View {
+        VStack(spacing: 6) {
+            ZStack {
+                Circle()
+                    .fill(badge.isUnlocked ? Theme.accent : Theme.surfaceSunken)
+                    .frame(width: 44, height: 44)
+                Image(systemName: badge.isUnlocked ? badge.iconName : "lock.fill")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(badge.isUnlocked ? Theme.accentInk : Theme.textFaint)
+            }
+            Text(badge.progressTarget.formatted(.number.precision(.fractionLength(0))))
+                .font(Theme.Font.numeric(11))
+                .foregroundStyle(badge.isUnlocked ? Theme.textPrimary : Theme.textFaint)
+        }
+        .frame(maxWidth: .infinity)
+    }
+}
+
+private struct BadgeDetailSheet: View {
+    let badge: Badge
+    let unit: MeasurementUnit
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Image(systemName: badge.iconName)
+                .font(.system(size: 34, weight: .semibold))
+                .foregroundStyle(badge.isUnlocked ? Theme.accentText : Theme.textFaint)
+                .frame(width: 72, height: 72)
+                .background(badge.isUnlocked ? Theme.accent.opacity(0.15) : Theme.surfaceSunken, in: Circle())
+
+            Text(badge.title)
+                .font(Theme.Font.title(19))
+                .foregroundStyle(Theme.textPrimary)
+                .multilineTextAlignment(.center)
+
+            if badge.isUnlocked, let unlockedAt = badge.unlockedAt {
+                MetaLabel(text: "Earned \(unlockedAt.formatted(date: .abbreviated, time: .omitted))", color: Theme.accentText)
+            } else {
+                VStack(spacing: 6) {
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            RoundedRectangle(cornerRadius: Theme.Radius.chip, style: .continuous)
+                                .fill(Theme.surfaceSunken)
+                            RoundedRectangle(cornerRadius: Theme.Radius.chip, style: .continuous)
+                                .fill(Theme.accent)
+                                .frame(width: geo.size.width * progressFraction)
+                        }
+                    }
+                    .frame(height: 8)
+                    MetaLabel(text: "\(formattedProgress(badge.progressCurrent)) / \(formattedProgress(badge.progressTarget)) \(unitLabel)", color: Theme.textDim)
+                }
+            }
+        }
+        .padding(24)
+    }
+
+    private var progressFraction: CGFloat {
+        guard badge.progressTarget > 0 else { return 0 }
+        return min(CGFloat(badge.progressCurrent / badge.progressTarget), 1)
+    }
+
+    private var unitLabel: String {
+        switch badge.category {
+        case .exerciseVolume, .totalVolume: unit.rawValue
+        case .workoutCount: "workouts"
+        case .streak: "weeks"
+        }
+    }
+
+    private func formattedProgress(_ value: Double) -> String {
+        value.formatted(.number.precision(.fractionLength(0)))
     }
 }
