@@ -99,6 +99,40 @@ final class _x5iveUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Start Workout B"].waitForExistence(timeout: 5))
     }
 
+    @MainActor
+    func testFinishingAWorkoutThatCrossesAVolumeMilestoneShowsTheNewBadgesRow() throws {
+        let app = launchApp()
+
+        app.buttons["Start Workout A"].tap()
+        XCTAssertTrue(app.staticTexts["Workout A"].waitForExistence(timeout: 5))
+
+        // Log every set of Squat (45 lb x 5 reps x 5 sets = 1125 lb) so it
+        // crosses the smallest 1,000 lb per-exercise volume tier. Skip the
+        // rest timer between sets so the test doesn't wait it out.
+        for setNumber in 1...5 {
+            let set = app.descendants(matching: .any)["Set \(setNumber)"]
+            XCTAssertTrue(set.waitForExistence(timeout: 5))
+            set.tap()
+            if setNumber < 5 {
+                XCTAssertTrue(app.buttons["SKIP"].waitForExistence(timeout: 5))
+                app.buttons["SKIP"].tap()
+            }
+        }
+
+        app.buttons["Finish Workout"].tap()
+
+        let alert = app.alerts["Some sets aren't logged"]
+        XCTAssertTrue(alert.waitForExistence(timeout: 5))
+        alert.buttons["Review & Finish"].tap()
+
+        XCTAssertTrue(app.buttons["Complete Workout"].waitForExistence(timeout: 5))
+        app.buttons["Complete Workout"].tap()
+
+        XCTAssertTrue(app.staticTexts["NEW BADGES"].waitForExistence(timeout: 5))
+
+        app.buttons["Done"].tap()
+    }
+
     // MARK: - Today view weight adjust
 
     @MainActor
