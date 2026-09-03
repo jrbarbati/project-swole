@@ -67,22 +67,41 @@ public enum StatsCalculator {
         )
     }
 
-    static func streaks(from sessions: [WorkoutSession], now: Date, calendar: Calendar) -> StreakInfo {
-        let sessionsByWeek = Dictionary(grouping: sessions) { calendar.dateInterval(of: .weekOfYear, for: $0.startedAt)?.start ?? $0.startedAt }
-        let weekStarts = Set(sessionsByWeek.filter { $0.value.count >= 3 }.map(\.key))
-        guard !weekStarts.isEmpty else { return StreakInfo(currentWeeks: 0, longestWeeks: 0) }
+    /// A single consecutive-week qualifying run, computed once so both
+    /// `streaks(from:)` and `BadgeCalculator` can derive their answers from
+    /// it without duplicating the week-grouping/run-length scan.
+    struct WeeklyRun {
+        let weekStart: Date
+        let runLength: Int
+        let sessionsInWeek: [WorkoutSession]
+    }
 
-        let sorted = weekStarts.sorted()
-        var longest = 1
-        var run = 1
-        for i in 1..<sorted.count {
-            if calendar.date(byAdding: .day, value: 7, to: sorted[i - 1]) == sorted[i] {
+    static func qualifyingWeeklyRuns(from sessions: [WorkoutSession], calendar: Calendar) -> [WeeklyRun] {
+        let sessionsByWeek = Dictionary(grouping: sessions) { calendar.dateInterval(of: .weekOfYear, for: $0.startedAt)?.start ?? $0.startedAt }
+        let qualifyingWeeks = sessionsByWeek.filter { $0.value.count >= 3 }
+        let sortedWeeks = qualifyingWeeks.map(\.key).sorted()
+
+        var run = 0
+        var previousWeek: Date?
+        var result: [WeeklyRun] = []
+        for week in sortedWeeks {
+            if let previousWeek, calendar.date(byAdding: .day, value: 7, to: previousWeek) == week {
                 run += 1
             } else {
                 run = 1
             }
-            longest = max(longest, run)
+            previousWeek = week
+            result.append(WeeklyRun(weekStart: week, runLength: run, sessionsInWeek: qualifyingWeeks[week] ?? []))
         }
+        return result
+    }
+
+    static func streaks(from sessions: [WorkoutSession], now: Date, calendar: Calendar) -> StreakInfo {
+        let runs = qualifyingWeeklyRuns(from: sessions, calendar: calendar)
+        let weekStarts = Set(runs.map(\.weekStart))
+        guard !weekStarts.isEmpty else { return StreakInfo(currentWeeks: 0, longestWeeks: 0) }
+
+        let longest = runs.map(\.runLength).max() ?? 1
 
         let nowWeekStart = calendar.dateInterval(of: .weekOfYear, for: now)?.start ?? now
         let priorWeekStart = calendar.date(byAdding: .day, value: -7, to: nowWeekStart) ?? nowWeekStart

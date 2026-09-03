@@ -127,22 +127,9 @@ public enum BadgeCalculator {
             }
         }
 
-        let sessionsByWeek = Dictionary(grouping: sessions) { calendar.dateInterval(of: .weekOfYear, for: $0.startedAt)?.start ?? $0.startedAt }
-        let qualifyingWeeks = sessionsByWeek.filter { $0.value.count >= 3 }
-        let sortedWeeks = qualifyingWeeks.map(\.key).sorted()
-
-        var run = 0
-        var previousWeek: Date?
-        for week in sortedWeeks {
-            if let previousWeek, calendar.date(byAdding: .day, value: 7, to: previousWeek) == week {
-                run += 1
-            } else {
-                run = 1
-            }
-            previousWeek = week
-            if streakWeekTiers.contains(run), dates.streak[run] == nil {
-                dates.streak[run] = qualifyingWeeks[week]?.map(\.startedAt).max() ?? week
-            }
+        for run in StatsCalculator.qualifyingWeeklyRuns(from: sessions, calendar: calendar)
+        where streakWeekTiers.contains(run.runLength) && dates.streak[run.runLength] == nil {
+            dates.streak[run.runLength] = run.sessionsInWeek.map(\.startedAt).max() ?? run.weekStart
         }
 
         return dates
