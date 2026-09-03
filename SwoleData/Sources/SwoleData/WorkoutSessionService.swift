@@ -14,6 +14,7 @@ public struct XPAward: Equatable {
     public let weeklyBonus: Int
     public let xpBefore: Int
     public let xpAfter: Int
+    public let newBadges: [Badge]
     public var total: Int { base + prBonus + perfectBonus + weeklyBonus }
 }
 
@@ -102,13 +103,15 @@ public enum WorkoutSessionService {
         let settings = try context.fetch(FetchDescriptor<UserSettings>()).first
         settings?.lastCompletedWorkoutType = session.workoutType
 
-        let award = try awardXP(for: session, in: context)
+        let unit = settings?.unit ?? .lb
+        let newBadges = try BadgeCalculator.newlyUnlocked(for: session, unit: unit, in: context)
+        let award = try awardXP(for: session, newBadges: newBadges, in: context)
 
         try context.save()
         return award
     }
 
-    private static func awardXP(for session: WorkoutSession, in context: ModelContext) throws -> XPAward {
+    private static func awardXP(for session: WorkoutSession, newBadges: [Badge], in context: ModelContext) throws -> XPAward {
         let state: GamificationState
         if let existing = try context.fetch(FetchDescriptor<GamificationState>()).first {
             state = existing
@@ -133,7 +136,8 @@ public enum WorkoutSessionService {
             perfectBonus: perfectBonus,
             weeklyBonus: weeklyBonus,
             xpBefore: xpBefore,
-            xpAfter: xpBefore + earned
+            xpAfter: xpBefore + earned,
+            newBadges: newBadges
         )
         state.totalXP = award.xpAfter
         return award

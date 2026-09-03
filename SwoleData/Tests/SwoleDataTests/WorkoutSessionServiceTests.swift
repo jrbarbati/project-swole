@@ -290,3 +290,33 @@ private func makeSeededContext() throws -> ModelContext {
     #expect(progress.current == 109)
     #expect(progress.needed == 260)
 }
+
+// MARK: - Badges
+
+@Test func finishWorkoutIncludesNewlyUnlockedBadgesInTheAward() throws {
+    let context = try makeSeededContext()
+    let session = try WorkoutSessionService.startWorkout(in: context)
+
+    for log in session.exerciseLogs {
+        for set in log.sets {
+            set.repsCompleted = log.targetReps
+        }
+    }
+
+    let award = try WorkoutSessionService.finishWorkout(session, in: context)
+
+    let squatBadge = award.newBadges.first {
+        guard case .exerciseVolume(let name) = $0.category else { return false }
+        return name == "Squat" && $0.progressTarget == 1000
+    }
+    #expect(squatBadge != nil)
+}
+
+@Test func finishWorkoutReturnsNoNewBadgesWhenNoTierIsCrossed() throws {
+    let context = try makeSeededContext()
+    let session = try WorkoutSessionService.startWorkout(in: context)
+
+    let award = try WorkoutSessionService.finishWorkout(session, in: context)
+
+    #expect(award.newBadges.isEmpty)
+}
