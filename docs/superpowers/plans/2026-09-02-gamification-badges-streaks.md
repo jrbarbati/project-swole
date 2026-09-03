@@ -344,12 +344,9 @@ git commit -m "feat: add Badge types and total-volume tier math"
 
 - [ ] **Step 1: Write the failing tests**
 
-Append to `BadgeCalculatorTests.swift`:
+Add `import SwiftData` and `import Foundation` to the top of `BadgeCalculatorTests.swift` (alongside the existing `import Testing` and `@testable import SwoleData`), then append the rest below the Task 2 tests:
 
 ```swift
-import SwiftData
-import Foundation
-
 @discardableResult
 private func insertFinishedSession(
     exercise: Exercise,
