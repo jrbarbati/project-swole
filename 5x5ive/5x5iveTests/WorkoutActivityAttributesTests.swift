@@ -91,9 +91,8 @@ struct WorkoutActivityAttributesTests {
         #expect(state.tiles == [.hit(5), .miss(3), .next, .empty])
     }
 
-    /// The very first tile is only `.next` once a `nil` actually appears in
-    /// `setReps` — a fully empty array (no sets built yet) has nothing to
-    /// point at, so every padded slot reads as plain `.empty`.
+    /// A fully empty `setReps` has no `nil` to point `.next` at, so every
+    /// padded slot reads as `.empty`.
     @Test func tilesPadShortSetRepsArraysToTotalSets() {
         var state = WorkoutActivityAttributes.ContentState.resting
         state.totalSets = 3
@@ -139,8 +138,7 @@ struct WorkoutActivityAttributesTests {
 }
 
 private extension WorkoutActivityAttributes.ContentState {
-    /// A representative resting state for tests that only care about a
-    /// couple of fields — mirrors the widget's own preview fixture.
+    /// Mirrors the widget's own preview fixture.
     static var resting: Self {
         .init(
             currentExerciseName: "Bench Press",

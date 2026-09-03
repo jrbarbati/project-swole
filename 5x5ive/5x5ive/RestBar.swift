@@ -28,7 +28,8 @@ struct RestBar: View {
 
                 VStack(alignment: .leading, spacing: 8) {
                     MetaLabel(text: rest.nextUpLabel)
-                    progressTrack(fraction: rest.progress(at: context.date))
+                    // Drains full-to-empty, matching the Live Activity's bar.
+                    progressTrack(fraction: 1 - rest.progress(at: context.date))
                 }
 
                 skipButton

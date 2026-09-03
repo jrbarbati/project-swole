@@ -3,8 +3,8 @@ import WidgetKit
 
 // MARK: - Meta label
 
-/// All-caps monospaced metadata. Same role as the app's `MetaLabel`, local to
-/// the extension so it can vary size per surface.
+/// Local counterpart to the app's `MetaLabel`, kept separate so size can
+/// vary per surface.
 struct LAMetaLabel: View {
     let text: String
     var size: CGFloat = 10
@@ -36,8 +36,6 @@ struct WorkoutBadge: View {
 
 // MARK: - Exercise header row
 
-/// Badge + name + target weight. Used on the lock screen and, split across
-/// leading/trailing regions, in the expanded island.
 struct ExerciseHeaderRow: View {
     let state: WorkoutActivityAttributes.ContentState
     var nameSize: CGFloat = 17
@@ -62,43 +60,32 @@ struct ExerciseHeaderRow: View {
 
 // MARK: - Drain bar
 
-/// The rest countdown as a capsule that drains left-to-right.
-///
-/// Built on `ProgressView(timerInterval:)` so the SYSTEM animates it — a
-/// Live Activity cannot re-render on a timer, and pushing a ContentState per
-/// second gets the activity throttled.
+/// Uses `ProgressView(timerInterval:)` so the system animates it without the
+/// extension re-rendering every second. Must stay on the built-in `.linear`
+/// style — a custom `ProgressViewStyle` here only renders once, at push
+/// time, and never updates.
 struct RestDrainBar: View {
     let window: ClosedRange<Date>
     var height: CGFloat = 5
 
     var body: some View {
-        ProgressView(timerInterval: window, countsDown: true) {
-            EmptyView()
-        } currentValueLabel: {
-            EmptyView()
-        }
-        .progressViewStyle(DrainBarStyle(height: height))
-    }
-}
-
-struct DrainBarStyle: ProgressViewStyle {
-    var height: CGFloat = 5
-
-    func makeBody(configuration: Configuration) -> some View {
-        GeometryReader { geometry in
-            ZStack(alignment: .leading) {
-                Capsule().fill(LATheme.borderStrong)
-                Capsule()
-                    .fill(LATheme.accent)
-                    .frame(width: geometry.size.width * (configuration.fractionCompleted ?? 1))
+        ZStack(alignment: .leading) {
+            Capsule().fill(LATheme.borderStrong)
+            ProgressView(timerInterval: window, countsDown: true) {
+                EmptyView()
+            } currentValueLabel: {
+                EmptyView()
             }
+            .progressViewStyle(.linear)
+            .tint(LATheme.accent)
         }
         .frame(height: height)
+        .clipShape(Capsule())
     }
 }
 
-/// Non-animating variant. For StandBy / Always-On, where a live ProgressView
-/// buys nothing at a 1Hz refresh, and for previews.
+/// Non-animating variant, for StandBy where a live ProgressView buys nothing
+/// at a 1Hz refresh.
 struct StaticDrainTrack: View {
     let fraction: Double
     var height: CGFloat = 5
@@ -120,7 +107,7 @@ struct StaticDrainTrack: View {
 
 // MARK: - Set tiles
 
-/// One tile. Palette lifted verbatim from the app's `SetTile`.
+/// Palette lifted verbatim from the app's `SetTile`.
 struct LASetTile: View {
     let state: SetTileState
     var height: CGFloat = LATheme.Tile.lockHeight
@@ -241,7 +228,7 @@ struct SetBars: View {
 
 // MARK: - Progress ring
 
-/// The drain bar wrapped into a circle, for the island's compact and minimal
+/// The drain bar wrapped into a circle, for the island's compact/minimal
 /// regions and the StandBy trailing dial.
 struct RestRing: View {
     let window: ClosedRange<Date>

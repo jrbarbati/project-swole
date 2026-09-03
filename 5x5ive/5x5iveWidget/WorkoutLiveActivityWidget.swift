@@ -2,11 +2,9 @@ import WidgetKit
 import SwiftUI
 import ActivityKit
 
-/// Full replacement for the shipping widget. Five surfaces, one visual
-/// language: monospaced numerics, the SetTile palette, a draining rest bar.
-///
-/// Information priority when space runs out: countdown, sets, weight,
-/// next-up. Every surface below is that list, truncated.
+/// Five surfaces, one visual language: monospaced numerics, the SetTile
+/// palette, a draining rest bar. Information priority when space runs out:
+/// countdown, sets, weight, next-up.
 struct WorkoutLiveActivityWidget: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: WorkoutActivityAttributes.self) { context in
@@ -70,8 +68,7 @@ struct WorkoutLiveActivityWidget: Widget {
                         .font(LATheme.Font.numeric(13))
                         .monospacedDigit()
                         .foregroundStyle(LATheme.accentText)
-                        // A timer Text needs a width budget or the island
-                        // clips it to an ellipsis mid-countdown.
+                        // Without this the island clips it to an ellipsis mid-countdown.
                         .frame(width: 42)
                 } else {
                     SetDots(tiles: state.tiles)
@@ -115,12 +112,12 @@ struct LockScreenBanner: View {
                 SetTileStrip(tiles: state.tiles)
                 FooterRow(state: state)
             }
-            .padding(16)
+            .padding(20)
         }
     }
 }
 
-/// Countdown + drain bar + Skip. The state the lifter sees most.
+/// The state the lifter sees most.
 private struct RestingRow: View {
     let state: WorkoutActivityAttributes.ContentState
     let window: ClosedRange<Date>
@@ -133,8 +130,7 @@ private struct RestingRow: View {
                         .font(LATheme.Font.numeric(44))
                         .monospacedDigit()
                         .foregroundStyle(LATheme.accentText)
-                        // Keeps the 44pt digits from being shrunk by the
-                        // system when the minutes place gains a digit.
+                        // Keeps the digits from shrinking when the minutes place gains a digit.
                         .minimumScaleFactor(0.8)
                         .lineLimit(1)
                     Spacer()
@@ -153,7 +149,6 @@ private struct RestingRow: View {
     }
 }
 
-/// No rest running — the state that currently shows nothing useful.
 private struct LiftingRow: View {
     let state: WorkoutActivityAttributes.ContentState
 
@@ -186,9 +181,8 @@ private struct FooterRow: View {
 
 // MARK: - StandBy / Always-On
 
-/// Everything dims because Always-On refreshes at 1Hz and burn-in is real.
-/// Tiles lose their text — glyphs that small are unreadable at that refresh
-/// rate — and the countdown is the only bright element.
+/// Dimmed for Always-On (1Hz refresh, burn-in risk); tiles drop their text
+/// since glyphs that small are unreadable at that refresh rate.
 struct DimmedBanner: View {
     let state: WorkoutActivityAttributes.ContentState
 
@@ -222,8 +216,7 @@ struct DimmedBanner: View {
         .padding(.horizontal, 22)
     }
 
-    /// The dial shows SET progress, not time — a static ring is honest about
-    /// sets and would lie about a countdown.
+    /// Sets, not time — a static ring would lie about a countdown.
     private var setFraction: Double {
         guard state.totalSets > 0 else { return 0 }
         return Double(state.completedSets) / Double(state.totalSets)

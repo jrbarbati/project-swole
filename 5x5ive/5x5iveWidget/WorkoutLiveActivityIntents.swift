@@ -2,20 +2,18 @@ import AppIntents
 import Combine
 import Foundation
 
-/// Buttons in a Live Activity run as `LiveActivityIntent`, which executes in
-/// the APP's process rather than the extension's — the only reason these can
-/// touch SwiftData at all. If the app isn't running, the system launches it
-/// in the background first.
+/// Buttons in a Live Activity run as `LiveActivityIntent` in the APP's
+/// process, not the extension's — the only reason they can touch SwiftData.
+/// The system launches the app in the background first if it isn't running.
 ///
-/// Must be in BOTH targets' Sources build phase (same as
-/// `WorkoutActivityAttributes.swift`): the extension needs the type to build
-/// the button, the app needs it to execute the action.
+/// Must be in both targets' Sources phase, like `WorkoutActivityAttributes`:
+/// the extension needs the type to build the button, the app to run it.
 
 struct SkipRestIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "Skip Rest"
     static var description = IntentDescription("Ends the running rest timer.")
-    /// The app must not come to the foreground — the phone is on the floor
-    /// next to the bar.
+    /// The phone is on the floor next to the bar — the app must not come
+    /// to the foreground.
     static var openAppWhenRun: Bool = false
 
     func perform() async throws -> some IntentResult {
@@ -38,13 +36,12 @@ struct LogSetIntent: LiveActivityIntent {
 }
 
 /// An intent has no reference to `ActiveWorkoutView`'s `viewModel` or
-/// `modelContext`, so it hands the action to this singleton and the view
-/// applies it. `pending` covers the cold-launch case: the system may run the
-/// intent before the view has subscribed, and the tap must not be lost.
+/// `modelContext`, so it hands off to this singleton, which the view
+/// applies. `pending` covers the cold-launch race where the system runs the
+/// intent before the view has subscribed.
 ///
-/// Compiled into both targets (like the intents above), but only ever
-/// meaningfully driven from the app process — `perform()` runs there, and
-/// `ActiveWorkoutView` is what calls `subscribe`/`unsubscribe`.
+/// Compiled into both targets, but only meaningfully driven from the app
+/// process — `ActiveWorkoutView` is what calls `subscribe`/`unsubscribe`.
 @MainActor
 final class WorkoutIntentBus: ObservableObject {
     static let shared = WorkoutIntentBus()

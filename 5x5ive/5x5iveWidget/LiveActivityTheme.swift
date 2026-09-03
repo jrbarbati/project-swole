@@ -1,12 +1,8 @@
 import SwiftUI
 
-/// Verbatim mirror of the values `WorkoutLiveActivityWidget` needs from the
-/// app target's `Theme.swift`, which is not in the extension target's
-/// Sources phase.
-///
-/// PREFER deleting this file and adding `Theme.swift` to the extension
-/// target instead — two sources of truth for a palette will drift. This
-/// exists only so the redesign drops in without editing the project file.
+/// Mirror of `Theme.swift`'s values, since the app target's Theme.swift
+/// isn't in the widget extension's Sources phase. Prefer adding it there
+/// and deleting this file instead — two sources of truth will drift.
 enum LATheme {
 
     static let textPrimary   = Color(light: 0x17150F, dark: 0xF5F3F0)

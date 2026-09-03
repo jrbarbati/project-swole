@@ -78,9 +78,8 @@ struct ActiveWorkoutView: View {
             }
         }
         .onChange(of: session.loggedSetCount) { _, _ in
-            // A set can log (or clear) without starting or ending a rest —
-            // e.g. via the rep picker's "Clear set" — which would otherwise
-            // leave the widget's tile row stale.
+            // Covers e.g. the rep picker's "Clear set" — logs without
+            // starting/ending a rest, which would otherwise leave the widget stale.
             if let state = currentActivityState() {
                 LiveActivityManager.shared.update(state: state)
             }
@@ -307,12 +306,10 @@ struct ActiveWorkoutView: View {
         let nextLog = logs.first { $0.order > currentLog.order }
         let rest = viewModel.activeRest
 
-        // SetLog relationships come back unordered — sort before mapping, or
-        // the widget's tile row reshuffles on every update.
+        // SetLog relationships come back unordered — sort or the tile row reshuffles.
         let orderedSets = currentLog.sortedSets
 
-        // Weight is formatted HERE, in the unit the user has chosen, so the
-        // extension never needs UserSettings or the lb/kg conversion.
+        // Formatted here, in the user's unit, so the extension never needs UserSettings.
         let weightLabel = "\(unit.fromLb(currentLog.targetWeight).formattedWeight) \(unit.rawValue)"
 
         return WorkoutActivityAttributes.ContentState(

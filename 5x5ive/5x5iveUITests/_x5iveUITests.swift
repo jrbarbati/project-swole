@@ -391,13 +391,10 @@ final class _x5iveUITests: XCTestCase {
 
     // MARK: - Live Activity content state (regression)
 
-    /// Clearing a logged set via the rep picker's "Clear set" settles with
-    /// `repsCompleted == nil` and doesn't start or end a rest, so it only
-    /// reaches `currentActivityState()` through the `.onChange(of:
-    /// session.loggedSetCount)` trigger. This can't observe the Live
-    /// Activity itself (XCUITest has no access to it), but it exercises the
-    /// exact code path that trigger runs on and proves the app stays
-    /// responsive through it.
+    /// Clearing a set logs `repsCompleted == nil` without starting or ending
+    /// a rest, reaching `currentActivityState()` only through the
+    /// `.onChange(of: session.loggedSetCount)` trigger. Can't observe the
+    /// Live Activity itself, but exercises that code path.
     @MainActor
     func testClearingALoggedSetViaTheRepPickerKeepsTheWorkoutResponsive() throws {
         let app = launchApp()
@@ -412,9 +409,7 @@ final class _x5iveUITests: XCTestCase {
         XCTAssertTrue(app.buttons["SKIP"].waitForExistence(timeout: 5))
         app.buttons["SKIP"].tap()
 
-        // A duration close to SetTileRow's 0.35s minimum isn't reliably
-        // recognized as a long press by XCUITest's synthetic touch — give it
-        // comfortable headroom.
+        // XCUITest's synthetic touch needs more than SetTileRow's 0.35s minimum to register as a long press.
         loggedSet.press(forDuration: 1.2)
         XCTAssertTrue(app.staticTexts["How many reps?"].waitForExistence(timeout: 5))
         app.buttons["Clear set"].tap()
