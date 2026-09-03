@@ -11,6 +11,7 @@ struct XPRevealView: View {
     @State private var visibleChipCount = 0
     @State private var barFraction: CGFloat = 0
     @State private var totalScale: CGFloat = 0.7
+    @State private var visibleBadgeCount = 0
 
     private var beforeProgress: (current: Int, needed: Int, level: Int) {
         XPCalculator.progress(forXP: award.xpBefore)
@@ -45,6 +46,8 @@ struct XPRevealView: View {
         return result
     }
 
+    private var badges: [Badge] { award.newBadges }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Spacer(minLength: 0)
@@ -63,6 +66,12 @@ struct XPRevealView: View {
 
             chipList
                 .padding(.horizontal, Theme.Space.screen)
+
+            if !badges.isEmpty {
+                badgeList
+                    .padding(.horizontal, Theme.Space.screen)
+                    .padding(.top, 18)
+            }
 
             levelBar
                 .padding(.top, 26)
@@ -91,6 +100,19 @@ struct XPRevealView: View {
             ForEach(Array(chips.enumerated()), id: \.offset) { index, chip in
                 if index < visibleChipCount {
                     BonusChipRow(chip: chip)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+            }
+        }
+    }
+
+    private var badgeList: some View {
+        VStack(alignment: .leading, spacing: 9) {
+            MetaLabel(text: "New Badges", color: Theme.textDim)
+                .tracking(1.2)
+            ForEach(Array(badges.enumerated()), id: \.offset) { index, badge in
+                if index < visibleBadgeCount {
+                    BadgeChipRow(badge: badge)
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
@@ -138,7 +160,17 @@ struct XPRevealView: View {
             }
         }
 
-        let barDelay = 0.35 + Double(chips.count) * 0.18 + 0.15
+        let badgesStartDelay = 0.35 + Double(chips.count) * 0.18 + 0.15
+        for index in badges.indices {
+            let delay = badgesStartDelay + Double(index) * 0.18
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                withAnimation(.spring(response: 0.45, dampingFraction: 0.75)) {
+                    visibleBadgeCount = index + 1
+                }
+            }
+        }
+
+        let barDelay = badgesStartDelay + Double(badges.count) * 0.18 + (badges.isEmpty ? 0 : 0.15)
         DispatchQueue.main.asyncAfter(deadline: .now() + barDelay) {
             withAnimation(.spring(response: 0.7, dampingFraction: 0.8)) {
                 barFraction = endFraction
@@ -164,6 +196,31 @@ private struct BonusChipRow: View {
             Text("+\(chip.value) XP")
                 .font(Theme.Font.numeric(15))
                 .foregroundStyle(Theme.accentText)
+        }
+        .padding(.vertical, 14)
+        .padding(.horizontal, Theme.Space.cardPadding)
+        .background(Theme.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(Theme.border, lineWidth: 1)
+        )
+    }
+}
+
+private struct BadgeChipRow: View {
+    let badge: Badge
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: badge.iconName)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(Theme.accentInk)
+                .frame(width: 32, height: 32)
+                .background(Theme.accent, in: Circle())
+            Text(badge.title)
+                .font(Theme.Font.body(15))
+                .foregroundStyle(Theme.textPrimary)
+            Spacer()
         }
         .padding(.vertical, 14)
         .padding(.horizontal, Theme.Space.cardPadding)
