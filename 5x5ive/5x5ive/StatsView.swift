@@ -90,6 +90,9 @@ struct StatsView: View {
     private var streakCard: some View {
         card {
             MetaLabel(text: "Consistency").tracking(1.6)
+            Text("3+ workouts / week")
+                .font(Theme.Font.body(12))
+                .foregroundStyle(Theme.textFaint)
             HStack(spacing: 28) {
                 statBlock(value: "\(streak?.currentWeeks ?? 0)", label: "week streak")
                 statBlock(value: "\(streak?.longestWeeks ?? 0)", label: "longest")
@@ -168,8 +171,12 @@ struct StatsView: View {
                     MetaLabel(text: group.title, color: Theme.textDim)
                     LazyVGrid(columns: badgeGridColumns, spacing: 12) {
                         ForEach(group.badges) { badge in
-                            BadgeTile(badge: badge)
-                                .onTapGesture { selectedBadge = badge }
+                            Button {
+                                selectedBadge = badge
+                            } label: {
+                                BadgeTile(badge: badge)
+                            }
+                            .buttonStyle(.plain)
                         }
                     }
                 }
@@ -319,6 +326,7 @@ private struct BadgeTile: View {
                 .foregroundStyle(badge.isUnlocked ? Theme.textPrimary : Theme.textFaint)
         }
         .frame(maxWidth: .infinity)
+        .contentShape(Rectangle())
     }
 }
 

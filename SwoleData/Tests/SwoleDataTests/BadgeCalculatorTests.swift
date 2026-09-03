@@ -146,6 +146,28 @@ private func insertFinishedSession(
     #expect(streakBadges.allSatisfy { !$0.isUnlocked }) // 1 qualifying week, smallest tier is 4
 }
 
+@Test func allBadgesWorkoutCountBadgeUnlocksAtTheTenthFinishedSession() throws {
+    let context = try makeInMemoryContext()
+    let squat = Exercise(name: "Squat", defaultSetCount: 5, defaultRepsPerSet: 5)
+    context.insert(squat)
+
+    var tenthSessionDate: Date!
+    for index in 0..<10 {
+        let date = Date().addingTimeInterval(Double(index) * 86400)
+        insertFinishedSession(exercise: squat, weight: 45, reps: 5, sets: 5, startedAt: date, context: context)
+        if index == 9 { tenthSessionDate = date }
+    }
+    try context.save()
+
+    let badges = try BadgeCalculator.allBadges(unit: .lb, in: context)
+    let workoutCount10 = badges.first { $0.category == .workoutCount && $0.progressTarget == 10 }
+
+    // insertFinishedSession sets finishedAt to startedAt + 40 minutes, and
+    // computeUnlockDates records `session.finishedAt ?? session.startedAt`.
+    #expect(workoutCount10?.isUnlocked == true)
+    #expect(workoutCount10?.unlockedAt == tenthSessionDate.addingTimeInterval(40 * 60))
+}
+
 @Test func allBadgesStreakBadgeUnlocksAndRecordsTheCrossingWeekAfterTheStreakBreaks() throws {
     let context = try makeInMemoryContext()
     let calendar = Calendar.current
@@ -159,7 +181,8 @@ private func insertFinishedSession(
     // badge would incorrectly show as locked.
     var fourthWeekLastSessionDate: Date!
     for weeksAgo in [10, 9, 8, 7] {
-        let weekStart = calendar.date(byAdding: .day, value: -7 * weeksAgo, to: now)!
+        let anchor = calendar.date(byAdding: .day, value: -7 * weeksAgo, to: now)!
+        let weekStart = calendar.dateInterval(of: .weekOfYear, for: anchor)?.start ?? anchor
         for offset in [0, 1, 2] {
             let date = weekStart.addingTimeInterval(Double(offset) * 3600)
             insertFinishedSession(exercise: squat, weight: 100, reps: 5, sets: 1, startedAt: date, context: context)

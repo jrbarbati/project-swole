@@ -50,34 +50,37 @@ struct XPRevealView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Spacer(minLength: 0)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    VStack(spacing: 10) {
+                        MetaLabel(text: leveledUp ? "Level Up!" : "XP Earned", color: Theme.accentText)
+                            .tracking(1.6)
+                        Text("+\(displayedTotal)")
+                            .font(Theme.Font.display(64))
+                            .foregroundStyle(Theme.textPrimary)
+                            .contentTransition(.numericText())
+                            .scaleEffect(totalScale)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 60)
+                    .padding(.bottom, 30)
 
-            VStack(spacing: 10) {
-                MetaLabel(text: leveledUp ? "Level Up!" : "XP Earned", color: Theme.accentText)
-                    .tracking(1.6)
-                Text("+\(displayedTotal)")
-                    .font(Theme.Font.display(64))
-                    .foregroundStyle(Theme.textPrimary)
-                    .contentTransition(.numericText())
-                    .scaleEffect(totalScale)
+                    chipList
+                        .padding(.horizontal, Theme.Space.screen)
+
+                    if !badges.isEmpty {
+                        badgeList
+                            .padding(.horizontal, Theme.Space.screen)
+                            .padding(.top, 18)
+                    }
+
+                    levelBar
+                        .padding(.top, 26)
+                        .padding(.horizontal, Theme.Space.screen)
+                        .padding(.bottom, 40)
+                }
+                .frame(maxWidth: .infinity)
             }
-            .frame(maxWidth: .infinity)
-            .padding(.bottom, 30)
-
-            chipList
-                .padding(.horizontal, Theme.Space.screen)
-
-            if !badges.isEmpty {
-                badgeList
-                    .padding(.horizontal, Theme.Space.screen)
-                    .padding(.top, 18)
-            }
-
-            levelBar
-                .padding(.top, 26)
-                .padding(.horizontal, Theme.Space.screen)
-
-            Spacer(minLength: 0)
 
             Button(action: onDone) {
                 Text("Done")

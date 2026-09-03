@@ -180,11 +180,13 @@ private func insertFinishedSession(
 
 @Test func streaksCountsAWeekWithThreeWorkoutsAsCurrentStreakOfOne() throws {
     let context = try makeInMemoryContext()
+    let calendar = Calendar.current
     let now = Date()
+    let weekStart = calendar.dateInterval(of: .weekOfYear, for: now)?.start ?? now
     let squat = Exercise(name: "Squat", defaultSetCount: 5, defaultRepsPerSet: 5)
     context.insert(squat)
     for offset in [0, 1, 2] {
-        insertFinishedSession(exercise: squat, weight: 100, reps: 5, sets: 1, startedAt: now.addingTimeInterval(Double(offset) * 3600), context: context)
+        insertFinishedSession(exercise: squat, weight: 100, reps: 5, sets: 1, startedAt: weekStart.addingTimeInterval(Double(offset) * 3600), context: context)
     }
     try context.save()
 
@@ -202,8 +204,9 @@ private func insertFinishedSession(
     context.insert(squat)
 
     let lastWeek = calendar.date(byAdding: .day, value: -7, to: now)!
+    let lastWeekStart = calendar.dateInterval(of: .weekOfYear, for: lastWeek)?.start ?? lastWeek
     for offset in [0, 1, 2] {
-        insertFinishedSession(exercise: squat, weight: 100, reps: 5, sets: 1, startedAt: lastWeek.addingTimeInterval(Double(offset) * 3600), context: context)
+        insertFinishedSession(exercise: squat, weight: 100, reps: 5, sets: 1, startedAt: lastWeekStart.addingTimeInterval(Double(offset) * 3600), context: context)
     }
     try context.save()
 
@@ -220,8 +223,9 @@ private func insertFinishedSession(
     context.insert(squat)
 
     let threeWeeksAgo = calendar.date(byAdding: .day, value: -21, to: now)!
+    let threeWeeksAgoStart = calendar.dateInterval(of: .weekOfYear, for: threeWeeksAgo)?.start ?? threeWeeksAgo
     for offset in [0, 1, 2] {
-        insertFinishedSession(exercise: squat, weight: 100, reps: 5, sets: 1, startedAt: threeWeeksAgo.addingTimeInterval(Double(offset) * 3600), context: context)
+        insertFinishedSession(exercise: squat, weight: 100, reps: 5, sets: 1, startedAt: threeWeeksAgoStart.addingTimeInterval(Double(offset) * 3600), context: context)
     }
     try context.save()
 
@@ -234,17 +238,19 @@ private func insertFinishedSession(
     let context = try makeInMemoryContext()
     let calendar = Calendar.current
     let now = Date()
+    let currentWeekStart = calendar.dateInterval(of: .weekOfYear, for: now)?.start ?? now
     let squat = Exercise(name: "Squat", defaultSetCount: 5, defaultRepsPerSet: 5)
     context.insert(squat)
 
     for weeksAgo in [10, 11, 12] {
-        let weekStart = calendar.date(byAdding: .day, value: -7 * weeksAgo, to: now)!
+        let anchor = calendar.date(byAdding: .day, value: -7 * weeksAgo, to: now)!
+        let weekStart = calendar.dateInterval(of: .weekOfYear, for: anchor)?.start ?? anchor
         for offset in [0, 1, 2] {
             insertFinishedSession(exercise: squat, weight: 100, reps: 5, sets: 1, startedAt: weekStart.addingTimeInterval(Double(offset) * 3600), context: context)
         }
     }
     for offset in [0, 1, 2] {
-        insertFinishedSession(exercise: squat, weight: 100, reps: 5, sets: 1, startedAt: now.addingTimeInterval(Double(offset) * 3600), context: context)
+        insertFinishedSession(exercise: squat, weight: 100, reps: 5, sets: 1, startedAt: currentWeekStart.addingTimeInterval(Double(offset) * 3600), context: context)
     }
     try context.save()
 
